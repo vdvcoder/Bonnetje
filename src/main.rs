@@ -27,6 +27,7 @@ mod raster;
 mod scheduler;
 mod server;
 mod settings;
+mod star;
 mod store;
 mod ui;
 mod update;

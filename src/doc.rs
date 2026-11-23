@@ -417,7 +417,7 @@ fn styled_line(text: &str, style: &Style) -> (String, usize) {
 }
 
 /// Largeur occupée par une ligne de texte, en points (identique en police A et B).
-fn text_width() -> u32 {
+pub(crate) fn text_width() -> u32 {
     columns_a() as u32 * 12
 }
 

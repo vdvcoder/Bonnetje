@@ -220,6 +220,9 @@ fn write_device_within(path: &Path, bytes: &[u8], timeout: Duration) -> Result<(
 
 /// Octets ESC/POS d'un ticket, fabriqués en mémoire.
 pub fn render(doc: &Doc, cut: bool) -> Result<Vec<u8>> {
+    if crate::star::enabled() {
+        return crate::star::render(doc, cut);
+    }
     let buffer = Rc::new(RefCell::new(Vec::new()));
     let driver = MemoryDriver(Rc::clone(&buffer));
     // PC858 = Europe de l'Ouest avec le symbole € ; le texte est encodé par `cp858`. PC850 (sans €)
