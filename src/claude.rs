@@ -277,7 +277,8 @@ impl Claude {
                     return Ok(value);
                 }
                 if let (Some(a), Some(b)) = (text.find('{'), text.rfind('}'))
-                    && let Ok(value) = serde_json::from_str::<Value>(&text[a..=b])
+                    && let Some(json) = text.get(a..=b)
+                    && let Ok(value) = serde_json::from_str::<Value>(json)
                 {
                     return Ok(value);
                 }
