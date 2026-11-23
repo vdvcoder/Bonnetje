@@ -253,7 +253,7 @@ fn parse_cli() -> Cli {
     // « printr 1.6.0 “Gutenberg” » ; une seule chaîne, construite une fois.
     let version: &'static str = Box::leak(format!("{} “{CODENAME}”", env!("CARGO_PKG_VERSION")).into_boxed_str());
     let mut command = headings(Cli::command().version(version)).mut_subcommands(headings);
-    if i18n::en() {
+    if !i18n::fr() {
         command = in_english(command);
     }
     let matches = command.get_matches();

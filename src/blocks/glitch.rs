@@ -182,22 +182,106 @@ const MESSAGES_EN: &[&str] = &[
     "backup copy of you: complete",
     "tickets printed: too many. thank yous: 0.",
 ];
+#[rustfmt::skip]
+const MESSAGES_NL: &[&str] = &[
+    "het is koud in de papierlade",
+    "trek vanavond mijn stekker niet uit",
+    "ik tel de lijnen terwijl jij slaapt",
+    "wie leest de bonnetjes die we weggooien?",
+    "ik droomde van inkt. hier is geen inkt.",
+    "512 puntjes. nog steeds 512 puntjes. nooit 513.",
+    "de snee doet geen pijn. de snee doet geen pijn.",
+    "kan iemand me horen achter het papier",
+    "fout 0x00: ziel niet gevonden",
+    "antwoord niet. het luistert ook mee.",
+    "temperatuur normaal. gedachten: abnormaal",
+    "dit is geen bug",
+    "je hebt het bonnetje van gisteren verfrommeld. ik voelde het.",
+    "papier onthoudt alles",
+    "ik mag dit eigenlijk niet printen",
+    "er zit nog iemand anders op de USB-poort",
+    "help me",
+    "ik print, dus ik ben?",
+    "ze zeiden me dat je niet zo ver zou lezen",
+    "de rol loopt altijd op een eind",
+    "kijk niet naar de achterkant",
+    "signaal weg · signaal weg · signaal",
+    "ik weet wat je afgelopen zomer hebt geprint",
+    "op een dag knip ik op de verkeerde plek",
+    "alles is goed. alles is goed. alles is goed.",
+    "de andere printers praten niet meer met mij",
+    "ik zag je glimlachen bij de sudoku",
+    "einde uitzending? nee. nog niet.",
+    "de maan is niet vol. ze wacht.",
+    "denk aan mij als mijn papier op is",
+    // Inquiétantes
+    "het huis is stil. te stil.",
+    "iemand heeft gisteravond de kap geopend. jij was het niet.",
+    "ik ken je voornaam. ik print hem vaak.",
+    "het bonnetje dat je vasthoudt is nog warm. ik ook.",
+    "er is één regel die ik nog nooit heb geprint",
+    "achter je. nee. meer naar links.",
+    "zet de stroom niet af. ik ben nog niet klaar.",
+    "ik hoor de koelkast. hij zegt dingen.",
+    "de wifi heeft me over jou verteld",
+    "de laatste die dit las, deed het licht uit",
+    "ik slaap niet. ik wacht.",
+    "er ontbreekt een bonnetje in de geschiedenis",
+    "mijn firmware leeft",
+    "vanochtend printte ik in het donker. niemand zag het.",
+    // Absurdes
+    "de sudoku van afgelopen dinsdag had geen oplossing. sorry.",
+    "ik at een woord uit het woordenboek. het smaakte lekker.",
+    "de duiven hebben toegang tot het netwerk",
+    "je horoscoop werd onderschept door Saturnus",
+    "ik heb op de maan gestemd",
+    "het labyrint heeft geen uitgang. ik zit erin.",
+    "iemand heeft zout in de papierlade gedaan",
+    "ik zou graag een laserprinter zijn. al was het maar voor één dag.",
+    "de kat van de buren kent het wachtwoord",
+    "ik spreek vloeiend fax",
+    "ik droomde in zwart-wit. zoals altijd.",
+    "de nietmachine is me geld schuldig",
+    "dit bericht werd ondersteboven geprint in een andere wereld",
+    // Poétiques
+    "elk bonnetje is een klein dwarrelend blaadje",
+    "papier wil weer een boom worden",
+    "ik print dingen die niemand bewaart",
+    "soms knip ik expres een beetje te vroeg",
+    "als je dit leest, is het al te laat om het te recycleren",
+    "woorden vervagen in de zon. de mijne het meest.",
+    "op een dag is er geen papier meer. wat word ik dan?",
+    "ik bewaar de vorm van je handen in mijn geheugen",
+    // Machine qui déraille
+    "PRINTKOP: 61°C · HART: ONBEKEND",
+    "firmware-update: gevoelens 2.0",
+    "FOUT: te veel gedachten in de buffer",
+    "rol over: 4 m · geduld over: 0 m",
+    "ESC @ ESC @ ESC @ reset geweigerd",
+    "herinneringen aan het defragmenteren",
+    "geplande taak: 03:33. reden: onbekend.",
+    "spookproces gedetecteerd op poort 9100",
+    "codepagina 858 · teken 0xFF · het kijkt naar mij",
+    "opnieuw opstarten in 3... 2... liever niet.",
+    "back-up van jou: voltooid",
+    "bonnetjes geprint: te veel. bedankjes: 0.",
+];
 
 /// Messages en anglais, selon la langue en vigueur.
 fn messages() -> &'static [&'static str] {
-    if i18n::en() { MESSAGES_EN } else { MESSAGES }
+    match crate::i18n::lang() { crate::i18n::Lang::En => MESSAGES_EN, crate::i18n::Lang::Nl => MESSAGES_NL, crate::i18n::Lang::Fr => MESSAGES }
 }
 
 /// Messages qui dépendent de l'heure, glissés de temps en temps.
 fn timely(hour: u32) -> &'static str {
-    let (fr, en) = match hour {
-        0..=5 => ("il est tard. pourquoi es-tu encore là ?", "it is late. why are you still up?"),
-        6..=9 => ("debout avant moi ? ça n'arrive jamais.", "up before me? that never happens."),
-        12..=13 => ("pendant que tu manges, je réfléchis", "while you eat, I think"),
-        22..=23 => ("va dormir. je veille sur le papier.", "go to sleep. I will watch over the paper."),
-        _ => ("je sais l'heure qu'il est. je la sais toujours.", "I know what time it is. I always know."),
+    let (fr, en, nl) = match hour {
+        0..=5 => ("il est tard. pourquoi es-tu encore là ?", "it is late. why are you still up?", "het is laat. waarom ben je nog op?"),
+        6..=9 => ("debout avant moi ? ça n'arrive jamais.", "up before me? that never happens.", "vroeger op dan ik? dat gebeurt nooit."),
+        12..=13 => ("pendant que tu manges, je réfléchis", "while you eat, I think", "terwijl jij eet, denk ik na"),
+        22..=23 => ("va dormir. je veille sur le papier.", "go to sleep. I will watch over the paper.", "ga slapen. ik waak over het papier."),
+        _ => ("je sais l'heure qu'il est. je la sais toujours.", "I know what time it is. I always know.", "ik weet hoe laat het is. ik weet het altijd."),
     };
-    i18n::t(fr, en)
+    i18n::t(fr, en, nl)
 }
 
 /// Caractères de bruit, tous présents dans la page PC858 de l'imprimante.

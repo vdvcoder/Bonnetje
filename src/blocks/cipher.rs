@@ -7,7 +7,7 @@ use rand::{RngExt, SeedableRng};
 use serde::Deserialize;
 
 use crate::doc::{Doc, Style};
-use crate::i18n::{en, t};
+use crate::i18n::t;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -50,10 +50,27 @@ const MESSAGES_EN: &[&str] = &[
     "Check the mailbox right now",
     "Tomorrow we go to the park",
 ];
+#[rustfmt::skip]
+const MESSAGES_NL: &[&str] = &[
+    "De schat ligt verstopt onder de zetel",
+    "Vanavond eten we pizza",
+    "Afspraak in de keuken om stipt acht uur",
+    "De kat heeft mijn huiswerk opgegeten",
+    "Je bent een topgeheim agent",
+    "Het wachtwoord is banaan",
+    "Kijk achter de deur van de living",
+    "Wie dit leest, moet een knuffel geven",
+    "Er ligt nog chocolade in de kast",
+    "Voltooi de missie en keer terug naar de basis",
+    "Dinsdag landen er aliens",
+    "Vertel niemand iets",
+    "Check meteen de brievenbus",
+    "Morgen gaan we naar het park",
+];
 
 /// Messages tirés au hasard quand le ticket n'en donne pas.
 fn messages() -> &'static [&'static str] {
-    if en() { MESSAGES_EN } else { MESSAGES }
+    match crate::i18n::lang() { crate::i18n::Lang::En => MESSAGES_EN, crate::i18n::Lang::Nl => MESSAGES_NL, crate::i18n::Lang::Fr => MESSAGES }
 }
 
 #[rustfmt::skip]

@@ -250,7 +250,7 @@ struct Written {
 }
 
 fn ask_claude(claude: &crate::claude::Claude, dish: &str, servings: u8) -> Result<Recipe> {
-    let (system, prompt) = if i18n::en() {
+    let (system, prompt) = if !i18n::fr() {
         (
             "You write family recipes for a ticket printed on a small thermal printer. Plain text only: \
              no emoji, no markdown. Real, reliable home cooking: common ingredients, exact quantities in \
@@ -287,7 +287,7 @@ fn ask_claude_ingredients(
     wish: &str,
 ) -> Result<Recipe> {
     let list = ingredients.join(", ");
-    let (system, prompt) = if i18n::en() {
+    let (system, prompt) = if !i18n::fr() {
         (
             "You write family recipes for a ticket printed on a small thermal printer. Plain text only: \
              no emoji, no markdown. You cook with what is at hand: the recipe is built on the given \

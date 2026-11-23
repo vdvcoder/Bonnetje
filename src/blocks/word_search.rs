@@ -9,7 +9,7 @@ use serde::Deserialize;
 use super::sudoku::Difficulty;
 use crate::doc::{Align, Doc, Style};
 use crate::draw;
-use crate::i18n::{en, t};
+use crate::i18n::t;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -81,7 +81,11 @@ impl Theme {
     }
 
     pub(crate) fn words(self) -> &'static [&'static str] {
-        if en() { english_words(self) } else { self.french_words() }
+        match crate::i18n::lang() {
+            crate::i18n::Lang::En => english_words(self),
+            crate::i18n::Lang::Nl => dutch_words(self),
+            crate::i18n::Lang::Fr => self.french_words(),
+        }
     }
 
     #[rustfmt::skip]
@@ -252,6 +256,89 @@ fn english_words(theme: Theme) -> &'static [&'static str] {
             "gradient", "layer", "input", "output", "robot", "logic", "inference", "algorithm", "learning",
             "prediction", "context", "memory", "language", "assistant", "synapse", "tensor", "perceptron",
             "attention", "error",
+        ],
+    }
+}
+
+#[rustfmt::skip]
+fn dutch_words(theme: Theme) -> &'static [&'static str] {
+    match theme {
+        Theme::Animaux => &[
+            "kat", "hond", "konijn", "paard", "koe", "schaap", "varken", "eend", "kip", "vos", "wolf", "beer", "tijger",
+            "leeuw", "giraf", "zebra", "aap", "uil", "adelaar", "walvis", "dolfijn", "schildpad", "kikker", "eekhoorn",
+            "egel", "muis", "geit", "panda", "koala", "bever",
+        ],
+        Theme::FruitsLegumes => &[
+            "appel", "peer", "kers", "aardbei", "banaan", "sinaasappel", "citroen", "abrikoos", "perzik", "pruim",
+            "druif", "meloen", "kiwi", "selderij", "mango", "wortel", "venkel", "raap", "radijs", "tomaat", "courgette",
+            "aubergine", "boon", "spinazie", "kool", "sla", "ui", "pompoen", "biet", "vijg",
+        ],
+        Theme::Cuisine => &[
+            "mes", "lepel", "vork", "pan", "pot", "soeplepel", "garde", "rasp", "zeef", "bord", "kom", "kop", "glas",
+            "oven", "bloem", "suiker", "boter", "recept", "taart", "pastei", "soep", "omelet", "peper", "gist", "zout",
+            "saus", "kruiden", "mosterd", "azijn", "kaas", "schort", "ketel",
+        ],
+        Theme::Nature => &[
+            "boom", "bos", "rivier", "berg", "heuvel", "dal", "weide", "bloem", "blad", "tak", "wortel", "rots", "zand",
+            "wolk", "regen", "storm", "sneeuw", "zon", "ster", "oceaan", "strand", "klif", "bron", "vijver", "veld",
+            "mos", "varen", "eik", "den", "vulkaan",
+        ],
+        Theme::Sport => &[
+            "voetbal", "tennis", "rugby", "judo", "zwemmen", "race", "wielrennen", "klimmen", "boksen", "golf",
+            "zeilen", "roeien", "schermen", "dans", "karate", "handbal", "basketbal", "hockey", "racket", "scheids",
+            "team", "wedstrijd", "stadion", "medaille", "podium", "sprint", "marathon", "duiken", "schaatsen",
+            "surfen",
+        ],
+        Theme::Metiers => &[
+            "bakker", "dokter", "postbode", "loodgieter", "timmerman", "tuinman", "verpleger", "piloot", "advocaat",
+            "rechter", "schilder", "metselaar", "kok", "ober", "kapper", "bloemist", "bibliothecaris", "herder",
+            "zeeman", "zanger", "pottenbakker", "tandarts", "architect", "slager", "boer", "agent", "kassier",
+            "leraar", "ingenieur", "chef",
+        ],
+        Theme::Maison => &[
+            "keuken", "slaapkamer", "zolder", "kelder", "garage", "tuin", "raam", "deur", "trap", "plafond", "dak",
+            "gang", "balkon", "kledingkast", "fauteuil", "tafel", "kruk", "lamp", "tapijt", "gordijn", "spiegel",
+            "plank", "kussen", "kast", "haard", "badkuip", "vloer", "bank", "mat", "stoel",
+        ],
+        Theme::Voyage => &[
+            "koffer", "vliegtuig", "trein", "boot", "ticket", "paspoort", "kaart", "kompas", "hotel", "strand",
+            "museum", "station", "luchthaven", "cruise", "wandelen", "kamperen", "tent", "gids", "souvenir", "grens",
+            "tussenstop", "vertrek", "aankomst", "toerist", "foto", "landschap", "herberg", "bezoek", "weg",
+            "vakantie",
+        ],
+        Theme::Musique => &[
+            "piano", "gitaar", "viool", "fluit", "banjo", "trompet", "harp", "tamboerijn", "saxofoon", "accordeon",
+            "orgel", "klarinet", "noot", "toonladder", "ritme", "melodie", "bekken", "lied", "refrein", "concert",
+            "orkest", "koor", "partituur", "tempo", "opera", "plaat", "microfoon", "bas", "xylofoon", "ukelele",
+        ],
+        Theme::Ecole => &[
+            "schrift", "potlood", "gum", "liniaal", "boekentas", "etui", "bord", "krijt", "klas", "leerling",
+            "huiswerk", "les", "kantine", "dictee", "wiskunde", "lezen", "passer", "schaar", "lijm", "kleurpotlood",
+            "bladzijde", "examen", "rapport", "cursus", "geschiedenis", "aardrijkskunde", "speelplaats", "pauze",
+            "bank", "kluisje",
+        ],
+        Theme::Developpement => &[
+            "code", "functie", "variabele", "lus", "object", "klasse", "methode", "interface", "debuggen", "test",
+            "bestand", "tak", "commit", "samenvoegen", "repository", "software", "algoritme", "syntaxis", "query",
+            "server", "module", "pakket", "byte", "tekst", "geheel", "pointer", "stapel", "recursie", "compiler",
+            "array",
+        ],
+        Theme::Devops => &[
+            "container", "docker", "pipeline", "levering", "cluster", "wolk", "image", "volume", "script", "robot",
+            "alarm", "log", "metriek", "back", "replica", "belasting", "release", "kubernetes", "ansible", "terraform",
+            "register", "geheim", "knoop", "uptime", "incident", "migratie", "productie", "monitoring", "machine",
+            "virtueel",
+        ],
+        Theme::Reseaux => &[
+            "router", "brug", "adres", "pakket", "frame", "kabel", "vezel", "wifi", "antenne", "server", "client",
+            "protocol", "poort", "masker", "gateway", "firewall", "domein", "latentie", "bandbreedte", "signaal",
+            "modem", "ethernet", "proxy", "tunnel", "socket", "netwerk", "routering", "host", "subnet", "ping",
+        ],
+        Theme::Ia => &[
+            "neuron", "netwerk", "model", "data", "corpus", "agent", "token", "prompt", "vector", "gewicht", "bias",
+            "gradient", "laag", "invoer", "uitvoer", "robot", "logica", "inferentie", "algoritme", "leren",
+            "voorspelling", "context", "geheugen", "taal", "assistent", "synaps", "tensor", "perceptron", "aandacht",
+            "fout",
         ],
     }
 }

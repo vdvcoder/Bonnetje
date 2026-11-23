@@ -54,6 +54,21 @@ const SIGNS_EN: [(&str, &str); 12] = [
     ("Aquarius", "Jan 20 - Feb 18"),
     ("Pisces", "Feb 19 - Mar 20"),
 ];
+#[rustfmt::skip]
+const SIGNS_NL: [(&str, &str); 12] = [
+    ("Ram", "21 mrt - 19 apr"),
+    ("Stier", "20 apr - 20 mei"),
+    ("Tweelingen", "21 mei - 20 jun"),
+    ("Kreeft", "21 jun - 22 jul"),
+    ("Leeuw", "23 jul - 22 aug"),
+    ("Maagd", "23 aug - 22 sep"),
+    ("Weegschaal", "23 sep - 22 okt"),
+    ("Schorpioen", "23 okt - 21 nov"),
+    ("Boogschutter", "22 nov - 21 dec"),
+    ("Steenbok", "22 dec - 19 jan"),
+    ("Waterman", "20 jan - 18 feb"),
+    ("Vissen", "19 feb - 20 mrt"),
+];
 
 /// (nom affiché, période, alias acceptés sans accents)
 #[rustfmt::skip]
@@ -88,8 +103,12 @@ fn strip_accents(s: &str) -> String {
 
 fn find_sign(sign: &str) -> Result<(&'static str, &'static str)> {
     let key = strip_accents(sign.trim());
-    match SIGNS.iter().position(|(_, _, aliases)| aliases.contains(&key.as_str())) {
+    // Nederlandse namen (Vissen, Leeuw…) gelden in elke taal, naast de Franse en Engelse.
+    let position = SIGNS.iter().position(|(_, _, aliases)| aliases.contains(&key.as_str()))
+        .or_else(|| SIGNS_NL.iter().position(|(name, _)| strip_accents(name) == key));
+    match position {
         Some(i) if i18n::en() => Ok(SIGNS_EN[i]),
+        Some(i) if i18n::nl() => Ok(SIGNS_NL[i]),
         Some(i) => Ok((SIGNS[i].0, SIGNS[i].1)),
         None => bail!("{}", tr!("signe inconnu : {sign}", "unknown sign: {sign}", "onbekend sterrenbeeld: {sign}")),
     }
@@ -127,10 +146,23 @@ const SERIOUS_THEMES_EN: &[&str] = &[
     "tidying up", "learning something new",
 ];
 #[rustfmt::skip]
+const SERIOUS_THEMES_NL: &[&str] = &[
+    "communicatie", "je organiseren", "creativiteit", "geld", "familie", "rust", "vriendschap",
+    "plannen voor de lange termijn", "zelfvertrouwen", "het onverwachte", "geduld", "nieuwe mensen leren kennen",
+    "opruimen", "iets nieuws leren",
+];
+#[rustfmt::skip]
 const ABSURD_THEMES_EN: &[&str] = &[
     "cooking", "public transport", "clouds", "outer space", "gardening", "classical music",
     "the Middle Ages", "bathroom objects", "the sea", "supermarkets", "pirates", "woodland animals",
     "the weather", "winter sports", "the circus", "cheese", "dinosaurs", "plumbing", "board games",
+    "haute couture",
+];
+#[rustfmt::skip]
+const ABSURD_THEMES_NL: &[&str] = &[
+    "koken", "openbaar vervoer", "wolken", "de ruimte", "tuinieren", "klassieke muziek",
+    "de middeleeuwen", "badkamerspullen", "de zee", "supermarkten", "piraten", "bosdieren",
+    "het weer", "wintersport", "het circus", "kaas", "dinosaurussen", "loodgieterij", "bordspellen",
     "haute couture",
 ];
 #[rustfmt::skip]
@@ -140,6 +172,14 @@ const INSULTING_THEMES_EN: &[&str] = &[
     "kitchen disasters", "laundry lying around", "driving", "badly planned vacations", "lost keys",
     "bingeing shows until 3 a.m.", "unanswered messages", "New Year's resolutions",
     "snoozing the alarm five times", "DIY projects", "diets",
+];
+#[rustfmt::skip]
+const INSULTING_THEMES_NL: &[&str] = &[
+    "te laat komen", "uitstelgedrag", "de zetel", "vergeten boodschappen", "de stapel vuile vaat",
+    "stervende kamerplanten", "de work-out die je maandag begon", "zwakke excuses", "sociale media",
+    "keukenrampen", "rondslingerende was", "autorijden", "slecht geplande vakanties", "verloren sleutels",
+    "series bingewatchen tot 3 uur ’s nachts", "onbeantwoorde berichten", "nieuwjaarsvoornemens",
+    "vijf keer op snooze drukken", "doe-het-zelfprojecten", "diëten",
 ];
 
 #[derive(Deserialize, Serialize)]
@@ -170,7 +210,7 @@ pub fn build(ctx: &Ctx, sign: &str, tone: Tone) -> Result<Doc> {
     let h = match cached {
         Some(h) => h,
         None if ctx.preview => {
-            return Ok(super::ai_placeholder(&format!("Horoscope · {name}"), i18n::t("L'horoscope", "The horoscope", "Het horoscoop")));
+            return Ok(super::ai_placeholder(&format!("{} · {name}", i18n::t("Horoscope", "Horoscope", "Horoscoop")), i18n::t("L'horoscope", "The horoscope", "De horoscoop")));
         }
         None => {
             let claude = ctx.claude.as_ref().context(crate::claude::missing())?;
@@ -189,7 +229,7 @@ pub fn build(ctx: &Ctx, sign: &str, tone: Tone) -> Result<Doc> {
 
     let mut doc = Doc::new();
     doc.from_cache = from_cache;
-    doc.header(&format!("Horoscope · {name}"));
+    doc.header(&format!("{} · {name}", i18n::t("Horoscope", "Horoscope", "Horoscoop")));
     doc.text(period, Style::default().small().center());
     doc.feed(1);
     doc.text(&h.general, Style::default());
@@ -209,7 +249,7 @@ pub fn build(ctx: &Ctx, sign: &str, tone: Tone) -> Result<Doc> {
 }
 
 fn generate(claude: &Claude, date: NaiveDate, name: &str, tone: Tone) -> Result<Horoscope> {
-    if i18n::en() {
+    if !i18n::fr() {
         return generate_en(claude, date, name, tone);
     }
     let themes = match tone {
@@ -270,7 +310,11 @@ fn generate(claude: &Claude, date: NaiveDate, name: &str, tone: Tone) -> Result<
 
 /// Les consignes en anglais : même structure, mêmes garde-fous, insultes anglaises.
 fn generate_en(claude: &Claude, date: NaiveDate, name: &str, tone: Tone) -> Result<Horoscope> {
+    let nl = i18n::nl();
     let themes = match tone {
+        Tone::Serious if nl => SERIOUS_THEMES_NL,
+        Tone::Absurd if nl => ABSURD_THEMES_NL,
+        Tone::Teasing | Tone::Insulting if nl => INSULTING_THEMES_NL,
         Tone::Serious => SERIOUS_THEMES_EN,
         Tone::Absurd => ABSURD_THEMES_EN,
         Tone::Teasing | Tone::Insulting => INSULTING_THEMES_EN,

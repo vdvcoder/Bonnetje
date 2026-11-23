@@ -91,9 +91,52 @@ const QUOTES_EN: &[(&str, &str)] = &[
     ("Talk is cheap. Show me the code.", "Linus Torvalds"),
     ("Stay hungry. Stay foolish.", "The Whole Earth Catalog"),
 ];
+#[rustfmt::skip]
+const QUOTES_NL: &[(&str, &str)] = &[
+    ("Zijn of niet zijn: dat is de vraag.", "William Shakespeare"),
+    ("De hele wereld is een toneel, en alle mannen en vrouwen zijn slechts spelers.", "William Shakespeare"),
+    ("Wij zijn uit het hout gesneden waar dromen van gemaakt zijn, en ons kleine leven wordt omringd door een slaap.", "William Shakespeare"),
+    ("Het pad van ware liefde liep nooit over rozen.", "William Shakespeare"),
+    ("Beknoptheid is de ziel van de geest.", "William Shakespeare"),
+    ("Niets is goed of slecht, het denken maakt het zo.", "William Shakespeare"),
+    ("We weten wat we zijn, maar niet wat we kunnen worden.", "William Shakespeare"),
+    ("Hoop is het ding met veren dat in de ziel neerstrijkt.", "Emily Dickinson"),
+    ("Vertel de hele waarheid, maar vertel ze schuin.", "Emily Dickinson"),
+    ("Ik nam de weg die minder begaan was, en dat maakte al het verschil.", "Robert Frost"),
+    ("De bossen zijn mooi, donker en diep, maar ik heb beloften na te komen en mijlen te gaan voor ik slaap.", "Robert Frost"),
+    ("De beste uitweg is altijd er dwars doorheen.", "Robert Frost"),
+    ("Het is een algemeen erkende waarheid dat een alleenstaande man met een goed fortuin een vrouw nodig heeft.", "Jane Austen"),
+    ("Geen charme evenaart een teder hart.", "Jane Austen"),
+    ("Het was de beste van alle tijden, het was de slechtste van alle tijden.", "Charles Dickens"),
+    ("Ik ben liever gelukkig dan waardig.", "Charlotte Brontë"),
+    ("Een mooi ding is een eeuwige vreugde.", "John Keats"),
+    ("Spreek ik mezelf tegen? Goed dan, ik spreek mezelf tegen. Ik ben groot, ik bevat massa’s mensen.", "Walt Whitman"),
+    ("Als je kalm kunt blijven wanneer iedereen om je heen het hoofd verliest en jou de schuld geeft…", "Rudyard Kipling"),
+    ("Houd vast aan dromen, want als dromen sterven, is het leven een vogel met gebroken vleugels die niet kan vliegen.", "Langston Hughes"),
+    ("Niet alles wat onder ogen wordt gezien kan veranderen, maar niets kan veranderen zolang het niet onder ogen wordt gezien.", "James Baldwin"),
+    ("Een leven zonder zelfonderzoek is het leven niet waard.", "Socrates"),
+    ("Goed gedaan is beter dan goed gezegd.", "Benjamin Franklin"),
+    ("Vroeg naar bed en vroeg op maakt een man gezond, rijk en wijs.", "Benjamin Franklin"),
+    ("Het enige wat we moeten vrezen is de vrees zelf.", "Franklin D. Roosevelt"),
+    ("Vraag niet wat je land voor jou kan doen; vraag wat jij voor je land kan doen.", "John F. Kennedy"),
+    ("Dat is een kleine stap voor een mens, een gigantische sprong voor de mensheid.", "Neil Armstrong"),
+    ("Moed is gratie onder druk.", "Ernest Hemingway"),
+    ("Verbeelding is belangrijker dan kennis.", "Albert Einstein"),
+    ("Het leven is als fietsen. Om je evenwicht te bewaren moet je in beweging blijven.", "Albert Einstein"),
+    ("Genialiteit is één procent inspiratie en negenennegentig procent transpiratie.", "Thomas Edison"),
+    ("Niets in het leven is te vrezen, het moet alleen begrepen worden.", "Marie Curie"),
+    ("We kunnen maar een korte afstand vooruitzien, maar we zien daar genoeg dat gedaan moet worden.", "Alan Turing"),
+    ("Elke voldoende geavanceerde technologie is niet van magie te onderscheiden.", "Arthur C. Clarke"),
+    ("De beste manier om de toekomst te voorspellen is haar uit te vinden.", "Alan Kay"),
+    ("Het is makkelijker om vergeving te vragen dan om toestemming te krijgen.", "Grace Hopper"),
+    ("Eenvoud is een voorwaarde voor betrouwbaarheid.", "Edsger W. Dijkstra"),
+    ("Voortijdige optimalisatie is de wortel van alle kwaad.", "Donald Knuth"),
+    ("Praten is gratis. Laat me de code zien.", "Linus Torvalds"),
+    ("Blijf hongerig. Blijf dwaas.", "The Whole Earth Catalog"),
+];
 
 pub fn build(today: NaiveDate) -> Doc {
-    let quotes = if crate::i18n::en() { QUOTES_EN } else { QUOTES };
+    let quotes = match crate::i18n::lang() { crate::i18n::Lang::En => QUOTES_EN, crate::i18n::Lang::Nl => QUOTES_NL, crate::i18n::Lang::Fr => QUOTES };
     // Une citation différente chaque jour, la même toute la journée.
     let index = (today.num_days_from_ce() as usize * 7) % quotes.len();
     let (quote, author) = quotes[index];

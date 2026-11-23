@@ -149,6 +149,19 @@ const NAMES_EN: [&str; N] = [
     "fish",
     "teacup",
 ];
+#[rustfmt::skip]
+const NAMES_NL: [&str; N] = [
+    "hart",
+    "dennenboom",
+    "boot",
+    "glimlach",
+    "paddenstoel",
+    "paraplu",
+    "huis",
+    "kat",
+    "vis",
+    "theekopje",
+];
 
 fn cells(picture: &[&str; N]) -> Vec<Vec<bool>> {
     picture.iter().map(|row| row.chars().map(|c| c == '#' || c == '~').collect()).collect()
@@ -235,7 +248,7 @@ pub fn build(number: Option<usize>, solution: bool) -> anyhow::Result<Doc> {
         None => rand::rng().random_range(0..PICTURES.len()),
     };
     let (name_fr, picture) = &PICTURES[index];
-    let name = crate::i18n::t(name_fr, NAMES_EN[index]);
+    let name = crate::i18n::t(name_fr, NAMES_EN[index], NAMES_NL[index]);
     let grid = cells(picture);
 
     let mut doc = Doc::new();

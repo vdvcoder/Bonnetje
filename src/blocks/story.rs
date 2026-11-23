@@ -53,7 +53,7 @@ fn ask(claude: &Claude, children: &[String], theme: &str, length: Length, past: 
     let kids = children.join(", ");
     let words = length.words();
     let past = if past.is_empty() { String::new() } else { past.join(" ; ") };
-    let (system, prompt) = if i18n::en() {
+    let (system, prompt) = if !i18n::fr() {
         (
             "You write bedtime stories for young children, printed on a small thermal printer and read \
              aloud by a parent. Plain text only: no emoji, no markdown. Gentle, warm and funny, with a little \

@@ -139,6 +139,7 @@ fn complete(lang: Language, saved: &mut Saved, level: u8) -> Result<()> {
     if missing.is_empty() {
         return Ok(());
     }
+    super::arrow_word::use_claude_for_definitions();
     let report = autodefs::generate_for(lang, &missing, &known_definitions(lang), level, |_| {}).map_err(|e| {
         anyhow!("{}", tr!("définitions par Claude impossibles : {e}", "Claude could not write the clues: {e}", "Claude kon de omschrijvingen niet schrijven: {e}"))
     })?;
@@ -253,7 +254,7 @@ fn french_clues(doc: &mut Doc, g: &Saved) {
 /// Définitions à l'anglaise : « Across » puis « Down », chaque mot précédé du numéro de sa case.
 fn english_clues(doc: &mut Doc, g: &Saved) {
     let numbers = g.numbers();
-    for (across, title) in [(true, "Across"), (false, "Down")] {
+    for (across, title) in [(true, crate::i18n::t("Across", "Across", "Horizontaal")), (false, crate::i18n::t("Down", "Down", "Verticaal"))] {
         doc.feed(1);
         doc.text(title, Style::default().bold().underline());
         let mut words: Vec<(u32, &Word)> =
@@ -277,7 +278,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
     let seed = options.seed.unwrap_or_else(|| rand::rng().random_range(1..100_000));
     let side = options.size.side();
     let lang = language();
-    let key = format!("mots-croises-v1-{side}-n{level}-{seed}-{}", lang.code());
+    let key = format!("mots-croises-v1-{side}-n{level}-{seed}-{}", crate::i18n::lang().code());
     let cache = ctx.cache.as_ref();
 
     let cached: Option<Saved> = cache.filter(|_| !ctx.refresh).and_then(|c| c.get(&key));

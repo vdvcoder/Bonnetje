@@ -36,6 +36,33 @@ const CATEGORIES_EN: &[&str] = &[
     "Thing that stings",
     "Excuse for being late",
 ];
+#[rustfmt::skip]
+const CATEGORIES_NL: &[&str] = &[
+    "Voornaam",
+    "Dier",
+    "Land",
+    "Stad",
+    "Beroep",
+    "Fruit of groente",
+    "Voorwerp",
+    "Kleur",
+    "Merk",
+    "Sport",
+    "Gerecht",
+    "Film of serie",
+    "Zanger of band",
+    "Bekend persoon",
+    "Muziekinstrument",
+    "Kledingstuk",
+    "Lichaamsdeel",
+    "Vervoermiddel",
+    "Bloem of plant",
+    "Tekenfilmheld",
+    "Frans woord",
+    "Lief scheldwoord",
+    "Ding dat prikt",
+    "Excuus om te laat te komen",
+];
 
 /// Lettres en anglais : sans Q, U, V, X, Y, Z, qui bloquent toute la partie.
 #[rustfmt::skip]
@@ -80,7 +107,7 @@ const LETTERS: &[char] = &[
 
 /// Lettres tirées par défaut, selon la langue en vigueur.
 fn letters() -> &'static [char] {
-    if i18n::en() { LETTERS_EN } else { LETTERS }
+    if i18n::fr() { LETTERS } else { LETTERS_EN }
 }
 
 /// Ligne « Catégorie ...... » : le reste de la ligne sert à écrire.
@@ -96,7 +123,7 @@ pub fn build(letter: Option<char>, categories: &[String], count: u8, players: u8
         .map(|c| c.to_uppercase().next().unwrap_or(c))
         .unwrap_or_else(|| *letters().choose(&mut rng).expect("lettres"));
     let categories: Vec<String> = if categories.is_empty() {
-        let mut pool = if i18n::en() { CATEGORIES_EN.to_vec() } else { CATEGORIES.to_vec() };
+        let mut pool = match crate::i18n::lang() { crate::i18n::Lang::En => CATEGORIES_EN, crate::i18n::Lang::Nl => CATEGORIES_NL, crate::i18n::Lang::Fr => CATEGORIES }.to_vec();
         pool.shuffle(&mut rng);
         pool.into_iter().take(count.clamp(3, 12) as usize).map(str::to_owned).collect()
     } else {

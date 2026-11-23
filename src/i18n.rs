@@ -64,6 +64,10 @@ pub fn en() -> bool {
     lang() == Lang::En
 }
 
+pub fn fr() -> bool {
+    lang() == Lang::Fr
+}
+
 pub fn nl() -> bool {
     lang() == Lang::Nl
 }
@@ -190,12 +194,13 @@ mod tests {
         with_lang(Lang::En, || {
             assert_eq!(long_date(d), "Wednesday, October 7, 2026");
             assert_eq!(weekday_short(d), "Wed");
+            assert_eq!(tr!("{} blocs", "{} blocks", "{} blokken", 3), "3 blocks");
         });
         with_lang(Lang::Nl, || {
             assert_eq!(long_date(d), "woensdag 7 oktober 2026");
             assert_eq!(weekday_short(d), "wo");
             assert_eq!(day_month(NaiveDate::from_ymd_opt(2026, 8, 1).unwrap()), "1 augustus");
-            assert_eq!(tr!("{} blocs", "{} blocks", "{} blokken", 3), "3 blocks");
+            assert_eq!(tr!("{} blocs", "{} blocks", "{} blokken", 3), "3 blokken");
         });
     }
 

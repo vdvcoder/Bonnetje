@@ -17,7 +17,11 @@ fn format_price(price: f64) -> String {
     };
     let s = format!("{price:.decimals$}");
     let (int, frac) = s.split_once('.').unwrap_or((&s, ""));
-    let (group_sep, dec_sep) = if crate::i18n::en() { (',', '.') } else { (' ', ',') };
+    let (group_sep, dec_sep) = match crate::i18n::lang() {
+        crate::i18n::Lang::En => (',', '.'),
+        crate::i18n::Lang::Nl => ('.', ','),
+        crate::i18n::Lang::Fr => (' ', ','),
+    };
     let mut grouped = String::new();
     for (i, c) in int.chars().enumerate() {
         if i > 0 && (int.len() - i) % 3 == 0 {

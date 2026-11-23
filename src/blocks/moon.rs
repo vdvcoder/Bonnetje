@@ -41,8 +41,19 @@ pub(super) fn name(age: f64) -> &'static str {
         "Last quarter",
         "Waning crescent",
     ];
+    #[rustfmt::skip]
+    const NAMES_NL: [&str; 8] = [
+        "Nieuwe maan",
+        "Wassende sikkel",
+        "Eerste kwartier",
+        "Wassende maan",
+        "Volle maan",
+        "Slinkende maan",
+        "Laatste kwartier",
+        "Slinkende sikkel",
+    ];
     let octant = ((age / SYNODIC_MONTH * 8.0) + 0.5).floor() as usize % 8;
-    i18n::t(NAMES[octant], NAMES_EN[octant])
+    i18n::t(NAMES[octant], NAMES_EN[octant], NAMES_NL[octant])
 }
 
 const DIAMETER: i64 = 150;

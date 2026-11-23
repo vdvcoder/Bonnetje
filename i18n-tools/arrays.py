@@ -74,7 +74,7 @@ def write():
         text = f.read_text()
         for m in reversed(list(DECL.finditer(text))):
             k = f"{f.relative_to(ROOT)}:{m.group('name')}"
-            if k not in done or re.search(rf"\b{m.group('name')[:-2]}NL\b", text):
+            if k not in done or re.search(rf"(const|static) {m.group('name')[:-2]}NL\b", text):
                 continue
             it = iter(done[k])
             body = STR.sub(lambda _: '"' + next(it) + '"', m.group("body"))

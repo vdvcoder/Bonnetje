@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use serde::Deserialize;
 
 use crate::doc::{Align, Doc, Style};
-use crate::i18n::{en, t};
+use crate::i18n::t;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -45,12 +45,12 @@ impl Level {
     }
 
     fn challenges(self) -> &'static [&'static str] {
-        let (fr, english) = match self {
-            Level::Easy => (EASY, EASY_EN),
-            Level::Medium => (MEDIUM, MEDIUM_EN),
-            Level::Hard => (HARD, HARD_EN),
+        let (fr, english, dutch) = match self {
+            Level::Easy => (EASY, EASY_EN, EASY_NL),
+            Level::Medium => (MEDIUM, MEDIUM_EN, MEDIUM_NL),
+            Level::Hard => (HARD, HARD_EN, HARD_NL),
         };
-        if en() { english } else { fr }
+        match crate::i18n::lang() { crate::i18n::Lang::En => english, crate::i18n::Lang::Nl => dutch, crate::i18n::Lang::Fr => fr }
     }
 }
 
@@ -82,6 +82,34 @@ const EASY_EN: &[&str] = &[
     "Slowly bend toward your toes with legs straight, 10 times, three times during the day.",
     "10 minutes of walking outside, with no phone in your hand.",
 ];
+#[rustfmt::skip]
+const EASY_NL: &[&str] = &[
+    "Neem de hele dag de trap: geen lift of roltrap toegestaan.",
+    "3 sets van 10 kuitheffingen, met een hand tegen de muur.",
+    "Wandel 10 minuten meteen na de lunch.",
+    "Sta elke keer als je je tanden poetst 30 seconden op één voet, op elke voet.",
+    "3 sets van 10 stoelsquats: ga zitten en sta op zonder je handen te gebruiken.",
+    "Sta elk uur op en rek je een minuut uit.",
+    "Vanavond 5 minuten rekken: nek, schouders, rug, dijen.",
+    "3 sets van 10 push-ups tegen de muur.",
+    "Zet overdag minstens 5.000 stappen.",
+    "Doe 20 armcirkels in elke richting, drie keer overdag.",
+    "Loop rond tijdens elk telefoongesprek.",
+    "Stap een halte eerder af of parkeer verder weg: 10 minuten extra wandelen.",
+    "3 keer 20 seconden planken op je knieën.",
+    "20 keer hoge knieën op de plaats, drie keer overdag.",
+    "Kom 5 keer van de grond op zonder je handen te gebruiken.",
+    "3 sets van 10 bilbruggen, liggend op je rug.",
+    "Dans op drie nummers na elkaar, zelfs alleen in je keuken.",
+    "2 sets van 8 lunges naar voren per been, met een hand op een stoel.",
+    "Lees of werk 15 minuten langer staand dan gewoonlijk.",
+    "3 sets van 10 zijwaartse beenheffingen per been, met een hand tegen de muur.",
+    "Stap 2 minuten non-stop op en af een trede.",
+    "15 minuten huishouden op muziek, in een goed tempo.",
+    "3 keer 30 seconden wall sit (knieën gebogen, rug tegen de muur).",
+    "Buig langzaam naar je tenen met gestrekte benen, 10 keer, drie keer overdag.",
+    "10 minuten buiten wandelen, zonder telefoon in je hand.",
+];
 
 #[rustfmt::skip]
 const MEDIUM_EN: &[&str] = &[
@@ -111,6 +139,34 @@ const MEDIUM_EN: &[&str] = &[
     "100 crunches over the day.",
     "1 minute 30 of plank in one go.",
 ];
+#[rustfmt::skip]
+const MEDIUM_NL: &[&str] = &[
+    "50 push-ups over de dag, in zoveel reeksen als nodig (desnoods op je knieën).",
+    "100 squats over de dag.",
+    "3 keer 45 seconden plank.",
+    "3 reeksen van 15 afwisselende lunges.",
+    "20 minuten stevig doorwandelen, in één keer.",
+    "3 keer 1 minuut wall sit.",
+    "3 reeksen van 10 burpees.",
+    "5 keer 30 seconden jumping jacks, met telkens 30 seconden rust.",
+    "3 reeksen van 12 dips op een stoel.",
+    "Zet 10.000 stappen over de dag.",
+    "3 reeksen van 20 mountain climbers.",
+    "3 keer 30 seconden zijwaartse plank per kant.",
+    "Beklim in totaal 20 verdiepingen over de dag.",
+    "3 reeksen van 10 glute bridges op één been, per been.",
+    "4 keer 1 minuut kleine sprongetjes op de plaats, als touwtjespringen.",
+    "3 reeksen van 20 crunches en 3 reeksen van 15 leg raises.",
+    "Circuit van 3 rondes: 10 push-ups, 15 squats, 20 seconden plank.",
+    "3 reeksen van 10 jump squats.",
+    "3 keer 30 seconden superman: op je buik, armen en benen omhoog.",
+    "15 minuten rustig joggen.",
+    "3 reeksen van 8 push-ups met smalle grip.",
+    "3 reeksen van 12 reverse lunges per been.",
+    "3 keer 30 seconden snelle high knees, daarna 30 seconden butt kicks.",
+    "100 crunches over de dag.",
+    "1 minuut 30 plank in één keer.",
+];
 
 #[rustfmt::skip]
 const HARD_EN: &[&str] = &[
@@ -139,6 +195,34 @@ const HARD_EN: &[&str] = &[
     "1,000 small jumps in place over the day.",
     "15 minutes of going up and down the stairs.",
     "A push-up pyramid: 1, 2, 3... up to 10, then back down to 1.",
+];
+#[rustfmt::skip]
+const HARD_NL: &[&str] = &[
+    "100 push-ups verspreid over de dag.",
+    "100 burpees verspreid over de dag.",
+    "300 squats verspreid over de dag.",
+    "3 keer 2 minuten plank.",
+    "Circuit van 5 rondes zonder pauze: 10 burpees, 20 jump squats, 15 push-ups, 30 seconden plank.",
+    "10 sets van 10 push-ups: één set aan het begin van elk uur.",
+    "In totaal 5 minuten wall sit, hoogstens in twee delen.",
+    "3 sets van 10 decline push-ups, voeten op een stoel.",
+    "3 sets van 8 pistol squats per been, met houvast aan een deurkozijn.",
+    "3 sets van 10 explosieve push-ups: til bij elke push je handen van de grond.",
+    "Loop 5 km.",
+    "50 jump squats en 50 jump lunges.",
+    "20 minuten: aan het begin van elke minuut 5 burpees en 5 jump squats.",
+    "3 keer 1 minuut zijplank aan elke kant.",
+    "3 sets van 15 stoeldips, voeten verhoogd.",
+    "Beklim 30 verdiepingen verspreid over de dag, waarvan 10 op een rij al lopend.",
+    "200 mountain climbers.",
+    "Tabata twee keer tijdens de dag: 8 rondes van 20 seconden burpees en 10 seconden rust.",
+    "100 jump lunges.",
+    "3 keer 45 seconden hollow hold: op je rug liggen, armen en benen gestrekt en van de grond.",
+    "3 sets van 10 archer push-ups: gewicht naar de ene zijde, dan naar de andere.",
+    "In totaal 5 minuten plank, hoogstens in twee delen.",
+    "1.000 kleine sprongetjes op de plaats verspreid over de dag.",
+    "15 minuten de trap op en af lopen.",
+    "Een push-up piramide: 1, 2, 3... tot 10, en dan weer terug naar 1.",
 ];
 
 #[rustfmt::skip]

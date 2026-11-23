@@ -125,8 +125,9 @@ fn sun_altitude(t: DateTime<Utc>, lat: f64, lon: f64) -> f64 {
 fn direction(az: f64) -> &'static str {
     const FR: [&str; 8] = ["nord", "nord-est", "est", "sud-est", "sud", "sud-ouest", "ouest", "nord-ouest"];
     const EN: [&str; 8] = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
+    const NL: [&str; 8] = ["noord", "noordoost", "oost", "zuidoost", "zuid", "zuidwest", "west", "noordwest"];
     let i = ((az / 45.0) + 0.5).floor() as usize % 8;
-    i18n::t(FR[i], EN[i])
+    i18n::t(FR[i], EN[i], NL[i])
 }
 
 /// « du nord vers l'est », « from the north to the east ».
@@ -134,6 +135,9 @@ fn path(from: f64, to: f64) -> String {
     let (from, to) = (direction(from), direction(to));
     if i18n::en() {
         return format!("from the {from} to the {to}");
+    }
+    if i18n::nl() {
+        return format!("van {from} naar {to}");
     }
     let vowel = |d: &str| d.starts_with(['e', 'o']);
     let from = if vowel(from) { format!("de l'{from}") } else { format!("du {from}") };
@@ -232,28 +236,28 @@ fn iss_passes(tle: &Tle, from: DateTime<Utc>, hours: i64, lat: f64, lon: f64) ->
 
 // ---- Étoiles filantes ----
 
-/// Grands essaims : (mois, jour du pic, nom français, nom anglais).
-const SHOWERS: [(u32, u32, &str, &str); 7] = [
-    (1, 3, "Quadrantides", "Quadrantids"),
-    (4, 22, "Lyrides", "Lyrids"),
-    (5, 6, "Êta Aquarides", "Eta Aquariids"),
-    (8, 12, "Perséides", "Perseids"),
-    (10, 21, "Orionides", "Orionids"),
-    (11, 17, "Léonides", "Leonids"),
-    (12, 14, "Géminides", "Geminids"),
+/// Grands essaims : (mois, jour du pic, nom français, nom anglais, nom néerlandais).
+const SHOWERS: [(u32, u32, &str, &str, &str); 7] = [
+    (1, 3, "Quadrantides", "Quadrantids", "Quadrantiden"),
+    (4, 22, "Lyrides", "Lyrids", "Lyriden"),
+    (5, 6, "Êta Aquarides", "Eta Aquariids", "Eta Aquariden"),
+    (8, 12, "Perséides", "Perseids", "Perseïden"),
+    (10, 21, "Orionides", "Orionids", "Orioniden"),
+    (11, 17, "Léonides", "Leonids", "Leoniden"),
+    (12, 14, "Géminides", "Geminids", "Geminiden"),
 ];
 
 /// L'essaim dont le pic tombe à deux jours près.
 fn shower(date: NaiveDate) -> Option<(&'static str, NaiveDate)> {
-    SHOWERS.iter().find_map(|&(m, d, fr, en)| {
+    SHOWERS.iter().find_map(|&(m, d, fr, en, nl)| {
         let peak = NaiveDate::from_ymd_opt(date.year(), m, d)?;
-        ((peak - date).num_days().abs() <= 2).then(|| (i18n::t(fr, en), peak))
+        ((peak - date).num_days().abs() <= 2).then(|| (i18n::t(fr, en, nl), peak))
     })
 }
 
 fn clock(t: DateTime<Utc>) -> String {
     let t = t.with_timezone(&Local);
-    if i18n::en() { format!("{:02}:{:02}", t.hour(), t.minute()) } else { format!("{} h {:02}", t.hour(), t.minute()) }
+    if !i18n::fr() { format!("{:02}:{:02}", t.hour(), t.minute()) } else { format!("{} h {:02}", t.hour(), t.minute()) }
 }
 
 pub fn build(ctx: &Ctx, location: &str) -> Result<Doc> {

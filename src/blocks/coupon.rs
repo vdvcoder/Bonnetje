@@ -48,6 +48,23 @@ const IDEAS_EN: &[&str] = &[
     "a day where you make all the calls",
     "a picnic",
 ];
+#[rustfmt::skip]
+const IDEAS_NL: &[&str] = &[
+    "ontbijt op bed",
+    "één keer afwassen zonder klagen",
+    "een onbeperkte knuffel",
+    "een filmavond naar keuze",
+    "een schoudermassage",
+    "lekker uitslapen",
+    "een zelfgemaakt dessert",
+    "een wandeling, met z’n tweetjes",
+    "een klusjesjoker",
+    "een avond zonder schermen",
+    "één spelletje naar keuze",
+    "een warme chocolademelk met slagroom",
+    "een dag waarop jij alle telefoontjes doet",
+    "een picknick",
+];
 
 const CUT: &str = "- - - - - - - - - - 8< - - - - - - - - - -";
 
@@ -90,7 +107,7 @@ pub struct Coupon<'a> {
 pub fn build(coupon: &Coupon, today: NaiveDate) -> Doc {
     let mut rng = StdRng::from_rng(&mut rand::rng());
     let count = coupon.count.clamp(1, 6) as usize;
-    let mut ideas = if i18n::en() { IDEAS_EN.to_vec() } else { IDEAS.to_vec() };
+    let mut ideas = match crate::i18n::lang() { crate::i18n::Lang::En => IDEAS_EN, crate::i18n::Lang::Nl => IDEAS_NL, crate::i18n::Lang::Fr => IDEAS }.to_vec();
     ideas.shuffle(&mut rng);
     let texts: Vec<&str> = match coupon.text.filter(|t| !t.trim().is_empty()) {
         Some(text) => vec![text; count],

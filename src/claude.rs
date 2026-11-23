@@ -95,6 +95,12 @@ impl Claude {
         Some(Self { model, backend })
     }
 
+    /// Zelfde verbinding, ander model.
+    pub fn with_model(mut self, model: &str) -> Self {
+        self.model = model.to_owned();
+        self
+    }
+
     pub fn model(&self) -> &str {
         &self.model
     }
@@ -109,12 +115,20 @@ impl Claude {
 
     /// Envoie une requête et décode la réponse selon le schéma JSON fourni (sorties structurées).
     pub fn generate<T: DeserializeOwned>(&self, system: &str, prompt: &str, schema: Value, effort: &str) -> Result<T> {
-        let value = match &self.backend {
-            Backend::Api { api_key, agent } => {
-                self.generate_api(agent, api_key.as_deref(), system, prompt, schema, effort)?
-            }
-            Backend::Cli { program } => self.generate_cli(program, system, prompt, &schema, effort)?,
+        // Nederlands: de blokken gebruiken hun Engelse opdracht, omgezet naar het Nederlands.
+        let (system, prompt) = if crate::i18n::nl() {
+            (format!("{}\n\n{DUTCH}", system.replace("English", "Dutch")), prompt.replace("English", "Dutch"))
+        } else {
+            (system.to_owned(), prompt.to_owned())
         };
+        let once = || match &self.backend {
+            Backend::Api { api_key, agent } => {
+                self.generate_api(agent, api_key.as_deref(), &system, &prompt, schema.clone(), effort)
+            }
+            Backend::Cli { program } => self.generate_cli(program, &system, &prompt, &schema, effort),
+        };
+        // Eén herkansing: de CLI geeft heel af en toe tekst in plaats van JSON terug.
+        let value = once().or_else(|_| once())?;
         serde_json::from_value(value.clone())
             .with_context(|| tr!("JSON inattendu de Claude : {value}", "unexpected JSON from Claude: {value}", "onverwachte JSON van Claude: {value}"))
     }
@@ -191,6 +205,8 @@ impl Claude {
             .env("ENABLE_CLAUDEAI_MCP_SERVERS", "false")
             // La CLI doit utiliser sa connexion (abonnement), pas une clé API qui traînerait.
             .env_remove("ANTHROPIC_API_KEY")
+            // Ook geen eigen API-adres: de CLI praat rechtstreeks met Anthropic.
+            .env_remove("ANTHROPIC_BASE_URL")
             .current_dir(std::env::temp_dir())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -256,11 +272,38 @@ impl Claude {
             Some(value) if !value.is_null() => Ok(value.clone()),
             _ => {
                 let text = reply["result"].as_str().unwrap_or_default();
+                // Terugval: soms schrijft het model de JSON in de tekst, of de tool-aanroep als tekst.
+                if let Some(value) = tool_call_in_text(text) {
+                    return Ok(value);
+                }
+                if let (Some(a), Some(b)) = (text.find('{'), text.rfind('}'))
+                    && let Ok(value) = serde_json::from_str::<Value>(&text[a..=b])
+                {
+                    return Ok(value);
+                }
                 serde_json::from_str(text)
                     .with_context(|| tr!("JSON inattendu de Claude : {text}", "unexpected JSON from Claude: {text}", "onverwachte JSON van Claude: {text}"))
             }
         }
     }
+}
+
+/// `<invoke name="StructuredOutput"><parameter name="k">v</parameter>…` als tekst teruggegeven:
+/// de eerste aanroep als JSON-object (waarden die zelf JSON zijn, zoals lijsten, blijven JSON).
+fn tool_call_in_text(text: &str) -> Option<Value> {
+    let start = text.find("<invoke name=\"StructuredOutput\">")?;
+    let call = &text[start..text[start..].find("</invoke>").map_or(text.len(), |e| start + e)];
+    let mut object = serde_json::Map::new();
+    for part in call.split("<parameter name=\"").skip(1) {
+        let (name, rest) = part.split_once("\">")?;
+        let value = rest.split("</parameter>").next()?.trim();
+        let value = match value.chars().next() {
+            Some('[' | '{') => serde_json::from_str(value).unwrap_or_else(|_| Value::String(value.to_owned())),
+            _ => Value::String(value.to_owned()),
+        };
+        object.insert(name.to_owned(), value);
+    }
+    (!object.is_empty()).then_some(Value::Object(object))
 }
 
 fn api_agent() -> ureq::Agent {
@@ -290,11 +333,28 @@ fn supports_default_fallbacks(model: &str) -> bool {
 }
 
 /// Message quand Claude n'est pas disponible (ni clé API, ni point de terminaison, ni CLI).
+/// Extra instructie voor `PRINTR_LANG=nl`.
+const DUTCH: &str = "IMPORTANT: write every JSON value in Dutch (Nederlands, natural for Flemish/Belgian \
+                     readers), even if the JSON keys are French. Keep the JSON keys exactly as specified.";
+
 pub fn missing() -> &'static str {
     t(
         "Claude indisponible : définis ANTHROPIC_API_KEY, pointe ANTHROPIC_BASE_URL vers un serveur compatible, ou installe la CLI Claude",
         "Claude unavailable: set ANTHROPIC_API_KEY, point ANTHROPIC_BASE_URL at a compatible server, or install the Claude CLI", "Claude niet beschikbaar: stel ANTHROPIC_API_KEY in, laat ANTHROPIC_BASE_URL naar een compatibele server wijzen, of installeer de Claude CLI",
     )
+}
+
+#[cfg(test)]
+mod tool_text_tests {
+    #[test]
+    fn reads_tool_call_written_as_text() {
+        let text = "\n<invoke name=\"StructuredOutput\">\n<parameter name=\"mot\">gedruis</parameter>\n\
+                    <parameter name=\"lijst\">[1, 2]</parameter>\n</invoke>\n<invoke name=\"StructuredOutput\">\n</invoke>";
+        let v = super::tool_call_in_text(text).unwrap();
+        assert_eq!(v["mot"], "gedruis");
+        assert_eq!(v["lijst"][1], 2);
+        assert!(super::tool_call_in_text("{\"a\": 1}").is_none());
+    }
 }
 
 #[cfg(test)]

@@ -4,9 +4,11 @@
 import { html, render, useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from '/vendor/preact-htm.mjs';
 
 // Langue de l'installation (PRINTR_LANG côté serveur), lue dans <html lang> : T('Bonjour', 'Hello', 'Hallo').
-const EN = document.documentElement.lang === 'en';
-const LOCALE = EN ? 'en-US' : 'fr-FR';
-const T = (fr, en) => (EN ? en : fr);
+const LANG = document.documentElement.lang;
+const EN = LANG === 'en';
+const NL = LANG === 'nl';
+const LOCALE = EN ? 'en-US' : NL ? 'nl-BE' : 'fr-FR';
+const T = (fr, en, nl) => (EN ? en : NL ? nl : fr);
 
 // ============================================================================
 // Outils
@@ -550,6 +552,7 @@ const BLOCKS = [
     summary: (b) => T(
       `${b.players} joueur${b.players > 1 ? 's' : ''}${b.letter ? ` · lettre ${b.letter.toUpperCase()}` : ''}`,
       `${b.players} player${b.players > 1 ? 's' : ''}${b.letter ? ` · letter ${b.letter.toUpperCase()}` : ''}`,
+      `${b.players} speler${b.players > 1 ? 's' : ''}${b.letter ? ` · letter ${b.letter.toUpperCase()}` : ''}`,
     ),
   },
   {
@@ -876,8 +879,8 @@ function composerFromPreset(preset, copy = false) {
 // Planification : jours et heures
 // ============================================================================
 
-const DAY_LETTERS = T(['L', 'M', 'M', 'J', 'V', 'S', 'D'], ['M', 'T', 'W', 'T', 'F', 'S', 'S']);
-const DAY_NAMES = T(['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'], ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+const DAY_LETTERS = T(['L', 'M', 'M', 'J', 'V', 'S', 'D'], ['M', 'T', 'W', 'T', 'F', 'S', 'S'], ['M', 'D', 'W', 'D', 'V', 'Z', 'Z']);
+const DAY_NAMES = T(['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'], ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']);
 
 function daysLabel(days) {
   const d = [...days].sort().join('');
@@ -886,7 +889,7 @@ function daysLabel(days) {
   if (d === '67') return T('Le week-end', 'Weekends', 'In het weekend');
   return days.slice().sort().map((n) => DAY_NAMES[n - 1]).join(' ');
 }
-const timeLabel = (t) => T(t.replace(':', ' h '), t);
+const timeLabel = (t) => T(t.replace(':', ' h '), t, t);
 const scheduleLabel = (s) => `${daysLabel(s.days)} · ${timeLabel(s.time)}`;
 
 // ============================================================================
@@ -1357,7 +1360,7 @@ function RestoreButton({ cls = 'btn secondary small', label }) {
 function FirstAccount({ onLogin }) {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const [lang, setLang] = useState(EN ? 'en' : 'fr');
+  const [lang, setLang] = useState(LANG || 'fr');
   const [busy, setBusy] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const submit = async (e) => {
@@ -1373,7 +1376,7 @@ function FirstAccount({ onLogin }) {
   };
   if (restarting) return html`<${Restarting} />`;
   return html`<form class="first-account" onSubmit=${submit}>
-    <div class="first-lang"><${Segmented} options=${[['fr', 'Français'], ['en', 'English']]} value=${lang} onChange=${setLang} /></div>
+    <div class="first-lang"><${Segmented} options=${[['nl', 'Nederlands'], ['fr', 'Français'], ['en', 'English']]} value=${lang} onChange=${setLang} /></div>
     <p style="margin:24px 0 14px"><strong>${T('Bienvenue !', 'Welcome!', 'Welkom!')}</strong><br/><span class="muted">${T(
       'Crée ton compte pour commencer. Tu pourras ensuite ajouter le reste de la famille.',
       'Create your account to get started. You can add the rest of the family afterwards.', 'Maak je account aan om te beginnen. Daarna kun je de rest van het gezin toevoegen.',
@@ -1532,7 +1535,7 @@ const EXAMPLE = {
   coloring: 'coloriage', coupon: 'bon', news: 'actualites', on_this_day: 'ephemeride', crypto: 'crypto', todo: 'a_faire',
   chores: 'taches', shopping: 'courses', recipe: 'recette', recipe_claude: 'recette_claude', recipe_from_ingredients: 'recette_ingredients', agenda: 'agenda', bins: 'poubelles', wifi: 'wifi', monthly_report: 'bilan',
 };
-const exampleUrl = (type) => EXAMPLE[type] && `/exemples/${EN ? 'en/' : ''}${EXAMPLE[type]}.png`;
+const exampleUrl = (type) => EXAMPLE[type] && `/exemples/${EN || NL ? 'en/' : ''}${EXAMPLE[type]}.png`;
 
 // Mots-clés de recherche, dans les deux langues, en plus du nom et de la description.
 const KEYWORDS = {
@@ -2374,7 +2377,7 @@ function SettingsSheet({ onClose }) {
     return next;
   });
   const cur = (key) => draft[key] ?? settings[key]?.value ?? '';
-  const lang = cur('PRINTR_LANG') || (EN ? 'en' : 'fr');
+  const lang = cur('PRINTR_LANG') || LANG || 'fr';
   // Ce qui change vraiment : un secret touché, ou une valeur différente de celle en vigueur.
   const changes = Object.fromEntries(Object.entries(draft).filter(([k, v]) =>
     !settings[k]?.locked && (settings[k]?.value === null && settings[k]?.set ? true : (settings[k]?.value ?? '') !== v)));
@@ -2416,7 +2419,7 @@ function SettingsSheet({ onClose }) {
       : T('Les changements s’appliquent au prochain redémarrage de Printr.', 'Changes apply the next time Printr restarts.', 'Wijzigingen worden toegepast bij de volgende herstart van Bonnetje.')}</p>
 
     <div class="section-title">${T('Général', 'General', 'Algemeen')}</div>
-    ${choice('PRINTR_LANG', T('Langue', 'Language', 'Taal'), [['fr', 'Français'], ['en', 'English']])}
+    ${choice('PRINTR_LANG', T('Langue', 'Language', 'Taal'), [['nl', 'Nederlands'], ['fr', 'Français'], ['en', 'English']])}
     ${text('PRINTR_CITY', T('Ville', 'City', 'Stad'), T('Météo, qualité de l’air et horaires du soleil, sauf si le bloc en précise une.', 'Weather, air quality and sun times, unless the block sets one.', 'Weer, luchtkwaliteit en zonnetijden, tenzij het blok er een instelt.'), T('Ex. Bordeaux', 'E.g. Boston', 'Bv. Gent'))}
     ${choice('PRINTR_UNITS', T('Unités de la météo', 'Weather units', 'Eenheden weer'), [['', T('°C et km/h', '°C and km/h', '°C en km/u')], ['imperial', T('°F et mph', '°F and mph', '°F en mph')]])}
 

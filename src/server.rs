@@ -714,20 +714,30 @@ fn asset(app: &App, path: &str) -> Option<(Vec<u8>, &'static str)> {
 /// La page et le manifeste sont écrits en français ; en anglais, le serveur change `<html lang>`
 /// (l'interface s'en sert pour choisir sa langue) et les quelques textes vus avant son chargement.
 fn localize(name: &str, bytes: Vec<u8>) -> Vec<u8> {
-    if !crate::i18n::en() || !matches!(name, "index.html" | "manifest.webmanifest") {
+    let lang = crate::i18n::lang();
+    if lang == crate::i18n::Lang::Fr || !matches!(name, "index.html" | "manifest.webmanifest") {
         return bytes;
     }
+    let code = lang.code();
     let mut text = String::from_utf8_lossy(&bytes).into_owned();
-    for (fr, en) in [
-        (r#"<html lang="fr">"#, r#"<html lang="en">"#),
+    for (fr, other) in [
+        (r#"<html lang="fr">"#.to_owned(), format!(r#"<html lang="{code}">"#)),
         (
-            "Composer, imprimer et planifier des tickets sur l'imprimante de la maison.",
-            "Compose, print and schedule tickets on the household receipt printer.",
+            "Composer, imprimer et planifier des tickets sur l'imprimante de la maison.".to_owned(),
+            crate::i18n::t(
+                "",
+                "Compose, print and schedule tickets on the household receipt printer.",
+                "Bonnetjes samenstellen, afdrukken en plannen op de printer van thuis.",
+            )
+            .to_owned(),
         ),
-        ("Printr a besoin de JavaScript.", "Printr needs JavaScript."),
-        (r#""lang": "fr""#, r#""lang": "en""#),
+        (
+            "Printr a besoin de JavaScript.".to_owned(),
+            crate::i18n::t("", "Printr needs JavaScript.", "Bonnetje heeft JavaScript nodig.").to_owned(),
+        ),
+        (r#""lang": "fr""#.to_owned(), format!(r#""lang": "{code}""#)),
     ] {
-        text = text.replace(fr, en);
+        text = text.replace(&fr, &other);
     }
     text.into_bytes()
 }

@@ -153,7 +153,7 @@ impl Grille {
 
 /// Langue des grilles : celle de l'installation.
 pub(super) fn language() -> Language {
-    if crate::i18n::en() { Language::En } else { Language::Fr }
+    if crate::i18n::fr() { Language::Fr } else { Language::En }
 }
 
 /// Dictionnaire par seuil de fréquence, chargé une fois (la liste est téléchargée par curl au
@@ -166,7 +166,8 @@ pub(super) fn dictionary(lang: Language, min_score: u32) -> Result<Arc<Dictionar
     if let Some(dict) = dicts.get(&(lang.code(), min_score)) {
         return Ok(Arc::clone(dict));
     }
-    let path = wordlist::for_language(lang, |_| {}).context(crate::i18n::t(
+    let path = if crate::i18n::nl() { dutch_wordlist() } else { wordlist::for_language(lang, |_| {}) };
+    let path = path.context(crate::i18n::t(
         "liste de mots de CrossWords indisponible (premier téléchargement)",
         "CrossWords word list unavailable (first download)", "CrossWords-woordenlijst niet beschikbaar (eerste download)",
     ))?;
@@ -176,9 +177,39 @@ pub(super) fn dictionary(lang: Language, min_score: u32) -> Result<Arc<Dictionar
     Ok(dict)
 }
 
+/// Nederlandse woordenlijst (OpenTaal + frequenties, zie i18n-tools/build_nl_wordlist.py), in de
+/// binary meegeleverd en bij het eerste gebruik in de cache van CrossWords gezet.
+fn dutch_wordlist() -> std::io::Result<PathBuf> {
+    let dir = wordlist::cache_dir().ok_or_else(|| std::io::Error::other("geen cachemap (CROSSWORDS_CACHE)"))?;
+    let path = dir.join("nl-v1.txt");
+    if !path.is_file() {
+        std::fs::create_dir_all(&dir)?;
+        let tmp = dir.join(format!("nl-v1.txt.{}.part", std::process::id()));
+        std::fs::write(&tmp, include_bytes!("../../assets/crosswords/nl.txt"))?;
+        std::fs::rename(&tmp, &path)?;
+    }
+    Ok(path)
+}
+
+/// Definities laten schrijven door Bonnetje's Claude (CLI van het abonnement, Nederlands indien
+/// `PRINTR_LANG=nl`) in plaats van een eigen API-aanroep van CrossWords.
+pub(super) fn use_claude_for_definitions() {
+    fn backend(model: &str, effort: &str, system: &str, user: &str, schema: &str) -> std::io::Result<String> {
+        let claude = crate::claude::Claude::from_env()
+            .ok_or_else(|| std::io::Error::other(crate::claude::missing()))?
+            .with_model(model);
+        let schema: serde_json::Value = serde_json::from_str(schema).map_err(std::io::Error::other)?;
+        let reply: serde_json::Value =
+            claude.generate(system, user, schema, effort).map_err(|e| std::io::Error::other(format!("{e:#}")))?;
+        Ok(reply.to_string())
+    }
+    crosswords::autodefs::set_backend(backend);
+}
+
 /// Le cache de définitions de CrossWords, un fichier par langue (comme sa commande).
 fn definitions_path(lang: Language) -> Option<PathBuf> {
     let name = match lang {
+        _ if crate::i18n::nl() => "definitions-nl.txt",
         Language::En => "definitions-en.txt",
         _ => "definitions.txt",
     };
@@ -224,6 +255,7 @@ fn complete(lang: Language, grille: &mut Grille, level: u8) -> Result<usize> {
     if missing.is_empty() {
         return Ok(0);
     }
+    use_claude_for_definitions();
     let report = autodefs::generate_for(lang, &missing, &known_definitions(lang), level, |_| {}).map_err(|e| {
         anyhow!("{}", tr!("définitions par Claude impossibles : {e}", "Claude could not write the clues: {e}", "Claude kon de omschrijvingen niet schrijven: {e}"))
     })?;
@@ -362,6 +394,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
     let lang = language();
     // Clé française inchangée : les grilles déjà gardées restent valables.
     let key = match lang {
+        _ if crate::i18n::nl() => format!("arrow-words-v2-{width}x{height}-n{level}-{seed}-nl"),
         Language::En => format!("arrow-words-v2-{width}x{height}-n{level}-{seed}-en"),
         _ => format!("mots-fleches-v2-{width}x{height}-n{level}-{seed}"),
     };

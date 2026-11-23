@@ -120,6 +120,54 @@ const FORTUNES_EN: &[&str] = &[
     "An old friend will soon get in touch.",
     "Fortune smiles on you today. Smile back.",
 ];
+#[rustfmt::skip]
+const FORTUNES_NL: &[&str] = &[
+    "Een verloren sok keert binnenkort terug in je leven.",
+    "Je ochtendkoffie van morgen wordt uitzonderlijk.",
+    "Je vindt wat je zoekt in de laatste zak die je controleert.",
+    "Iemand denkt nu aan je. Waarschijnlijk om je iets te vragen.",
+    "Een onverwachte maaltijd wacht op je. Kijk achteraan in de koelkast.",
+    "Vandaag is de traagste rij precies die je kiest.",
+    "Goed nieuws komt via de voordeur binnen. Of via het raam, als dat openstaat.",
+    "Je gaat vandaag lachen. Misschien met jezelf, maar het is een goed begin.",
+    "De sterren staan aan jouw kant. De vaatwasser iets minder.",
+    "Geduld is een schone zaak. Dessert ook.",
+    "Niet de bestemming telt, maar dat je je sleutels niet vergeet.",
+    "Een kleine stap voor jou, een reuzenoverwinning op de zetel.",
+    "Je kamerplant bedankt je omdat je eraan dacht hem water te geven. Ze dringt aan.",
+    "Je krijgt een briljant idee onder de douche. Hou een waterdicht potlood bij.",
+    "Het geluk is met wie zijn kamer opruimt.",
+    "De kat weet iets wat jij niet weet.",
+    "Een belangrijke afspraak wacht op je: met je kussen, vanavond.",
+    "Zeg vandaag twee keer vaker dankjewel dan anders.",
+    "Iemand heeft je glimlach nodig vandaag. Hij is gratis, doe het gewoon.",
+    "Het is nooit te laat voor een tweede ontbijt.",
+    "Pas op voor ongelijke sokken: ze beramen iets.",
+    "Het beste moment om een boom te planten was twintig jaar geleden. Het tweede beste is nu.",
+    "Langzaam maar zeker wint de race, zeker op maandagochtend.",
+    "Na regen komt zonneschijn.",
+    "Rome is niet op één dag gebouwd.",
+    "Een reis van duizend mijl begint met één stap.",
+    "De vroege vogel vangt de worm. De tweede muis krijgt de kaas.",
+    "Verkoop de huid niet voor de beer geschoten is.",
+    "Waar een wil is, is een weg.",
+    "Slaap er een nachtje over: de nacht brengt raad.",
+    "Nog een fout is nog een les.",
+    "Je volgende goede daad wordt opgemerkt. Door minstens één duif.",
+    "Je wint deze week een bordspel. Of bijna.",
+    "Een vergeten boek op een plank wacht op je.",
+    "De afstandsbediening ligt onder het linkerkussen.",
+    "Vandaag is een prima dag om niets uit te stellen. Behalve de afwas.",
+    "Het geluk zit om de hoek. Check toch maar het weer.",
+    "Iemand thuis bereidt een verrassing voor je voor. Doe alsof je van niets weet.",
+    "Je leert vanavond nog iets nieuws.",
+    "Eén oprecht compliment is meer waard dan tien cadeaus.",
+    "Tijd die je lachend doorbrengt, is tijd die je met de goden doorbrengt.",
+    "Je zult je paraplu vandaag missen, precies omdat je hem thuis liet.",
+    "Het antwoord op je vraag is: ja, maar niet meteen.",
+    "Een oude vriend neemt binnenkort contact met je op.",
+    "Het geluk lacht je vandaag toe. Lach terug.",
+];
 
 /// La vache de `cowsay`, sous la bulle.
 const COW: &[&str] = &[
@@ -241,7 +289,7 @@ fn system_fortune() -> Result<String> {
 pub fn build(source: Source, cow: bool, seed: Option<u64>) -> Result<Doc> {
     let (text, number) = match source {
         Source::Builtin => {
-            let list = if i18n::en() { FORTUNES_EN } else { FORTUNES };
+            let list = match crate::i18n::lang() { crate::i18n::Lang::En => FORTUNES_EN, crate::i18n::Lang::Nl => FORTUNES_NL, crate::i18n::Lang::Fr => FORTUNES };
             let seed = seed.unwrap_or_else(|| rand::rng().random_range(1..100_000));
             let index = StdRng::seed_from_u64(seed).random_range(0..list.len());
             (list[index].to_owned(), Some(seed))

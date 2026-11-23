@@ -38,9 +38,10 @@ pub fn build(ctx: &Ctx) -> Result<Doc> {
     let date = ctx.today;
     let cache = ctx.cache.as_ref();
     // Un historique par langue : un mot anglais n'empêche pas un mot français, et inversement.
-    let (key, history) = match i18n::en() {
-        true => (format!("{date}-word-of-the-day"), "words-of-the-day.txt"),
-        false => (format!("{date}-mot-du-jour"), "mots-du-jour.txt"),
+    let (key, history) = match i18n::lang() {
+        i18n::Lang::En => (format!("{date}-word-of-the-day"), "words-of-the-day.txt"),
+        i18n::Lang::Nl => (format!("{date}-woord-van-de-dag"), "woorden-van-de-dag.txt"),
+        i18n::Lang::Fr => (format!("{date}-mot-du-jour"), "mots-du-jour.txt"),
     };
     let cached: Option<Word> = cache.filter(|_| !ctx.refresh).and_then(|c| c.get(&key)).filter(Word::is_complete);
     let from_cache = cached.is_some();
@@ -95,7 +96,7 @@ fn generate(claude: &Claude, date: NaiveDate, past: &[String]) -> Result<Word> {
         format!("\nCes mots ont déjà été proposés, choisis-en un autre : {}.", past.join(", "))
     };
     let letter = LETTERS[date.ordinal0() as usize % LETTERS.len()] as char;
-    if i18n::en() {
+    if !i18n::fr() {
         return generate_en(claude, date, letter, past);
     }
 

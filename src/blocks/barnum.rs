@@ -90,15 +90,15 @@ pub fn available() -> bool {
 }
 
 /// Lance Barnum et lit sa réponse JSON.
-fn run(command: &[String], who: &Who, date: NaiveDate, variant: Option<&str>, english: bool) -> Result<Reading> {
+fn run(command: &[String], who: &Who, date: NaiveDate, variant: Option<&str>, lang: &str) -> Result<Reading> {
     let (program, base) = command.split_first().context(i18n::t("commande Barnum vide", "empty Barnum command", "leeg Barnum-commando"))?;
     let mut cmd = Command::new(program);
     cmd.args(base);
     // Options d'abord, sous la forme `--option=valeur`, puis `--` : un signe ou une variante
     // venus de l'appli ne peuvent jamais être pris pour une option de Barnum.
     cmd.arg(format!("--date={date}")).arg("--json");
-    if english {
-        cmd.arg("--lang=en");
+    if lang != "fr" {
+        cmd.arg(format!("--lang={lang}"));
     }
     if let Some(variant) = variant {
         cmd.arg(format!("--sel={variant}"));
@@ -137,7 +137,7 @@ fn run(command: &[String], who: &Who, date: NaiveDate, variant: Option<&str>, en
     if !status.success() {
         // « barnum: error: signe inconnu : … » : on garde le message utile.
         let message = stderr.lines().last().unwrap_or(i18n::t("erreur inconnue", "unknown error", "onbekende fout"));
-        if english && message.contains("--lang") {
+        if lang != "fr" && (message.contains("--lang") || message.contains("langue")) {
             return Err(OldBarnum.into());
         }
         bail!("{}", message.trim_start_matches("barnum: error: "));
@@ -171,13 +171,17 @@ fn gauge(note: u8) -> String {
 /// Les libellés suivent la langue de la lecture, pas celle de l'installation : un ticket écrit par
 /// un Barnum qui ne parle que français reste entièrement en français.
 fn render(r: &Reading, sky: bool) -> Doc {
-    let lang = if r.langue.as_deref() == Some("en") { i18n::Lang::En } else { i18n::Lang::Fr };
+    let lang = match r.langue.as_deref() {
+        Some("en") => i18n::Lang::En,
+        Some("nl") => i18n::Lang::Nl,
+        _ => i18n::Lang::Fr,
+    };
     i18n::with_lang(lang, || render_in_language(r, sky))
 }
 
 fn render_in_language(r: &Reading, sky: bool) -> Doc {
     let mut doc = Doc::new();
-    doc.header(&format!("Horoscope · {}", r.signe));
+    doc.header(&format!("{} · {}", i18n::t("Horoscope", "Horoscope", "Horoscoop"), r.signe));
     if let Some(moon) = &r.lune {
         doc.text(&tr!("Lune : {} en {}", "Moon: {} in {}", "Maan: {} in {}", moon.phase, moon.signe), Style::default().small().center());
     }
@@ -221,8 +225,14 @@ fn render_in_language(r: &Reading, sky: bool) -> Doc {
 
 pub fn build(who: Who, date: NaiveDate, sky: bool, variant: Option<&str>) -> Result<Doc> {
     let command = command();
-    let reading = match run(&command, &who, date, variant, i18n::en()) {
-        Err(e) if e.is::<OldBarnum>() => run(&command, &who, date, variant, false)?,
+    // Nederlands vraagt Barnum met een nl-module (lokaal op de Pi); anders Engels, dan Frans.
+    let wanted = i18n::lang().code();
+    let reading = match run(&command, &who, date, variant, wanted) {
+        Err(e) if e.is::<OldBarnum>() && wanted == "nl" => match run(&command, &who, date, variant, "en") {
+            Err(e) if e.is::<OldBarnum>() => run(&command, &who, date, variant, "fr")?,
+            other => other?,
+        },
+        Err(e) if e.is::<OldBarnum>() => run(&command, &who, date, variant, "fr")?,
         other => other?,
     };
     Ok(render(&reading, sky))
@@ -270,7 +280,7 @@ mod tests {
     fn missing_program_is_explained() {
         let cmd = vec!["printr-barnum-introuvable".to_owned()];
         let date = NaiveDate::from_ymd_opt(2026, 10, 8).unwrap();
-        let err = run(&cmd, &Who::Sign("lion".into()), date, None, false).err().unwrap();
+        let err = run(&cmd, &Who::Sign("lion".into()), date, None, "fr").err().unwrap();
         assert!(err.to_string().contains("Barnum introuvable"));
     }
 
@@ -299,9 +309,9 @@ mod tests {
         // hériterait du fichier encore ouvert en écriture, et l'exécution échouerait (ETXTBSY).
         let cmd = vec!["sh".to_owned(), script.to_string_lossy().into_owned()];
         let date = NaiveDate::from_ymd_opt(2026, 10, 8).unwrap();
-        let err = run(&cmd, &Who::Sign("lion".into()), date, None, true).err().unwrap();
+        let err = run(&cmd, &Who::Sign("lion".into()), date, None, "en").err().unwrap();
         assert!(err.is::<OldBarnum>());
-        let reading = run(&cmd, &Who::Sign("lion".into()), date, None, false).unwrap();
+        let reading = run(&cmd, &Who::Sign("lion".into()), date, None, "fr").unwrap();
         let all = i18n::with_lang(i18n::Lang::En, || lines(&render(&reading, false)).join("\n"));
         assert!(all.contains("Couleur violet"));
         std::fs::remove_dir_all(&dir).ok();

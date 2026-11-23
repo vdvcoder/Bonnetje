@@ -41,7 +41,7 @@ fn who(by: &str) -> String {
 
 fn plural(n: usize, word: &str) -> String {
     // Pluriel à la française dès 2, à l'anglaise sauf pour 1 (« 0 tickets »).
-    let many = if i18n::en() { n != 1 } else { n > 1 };
+    let many = if i18n::fr() { n > 1 } else { n != 1 };
     format!("{n} {word}{}", if many { "s" } else { "" })
 }
 
@@ -87,7 +87,11 @@ fn render(entries: &[HistoryEntry], first: NaiveDate, today: NaiveDate, now: Dat
     } else {
         i18n::t("mois complet", "full month", "volledige maand").to_owned()
     };
-    let printed = if i18n::en() { now.format("%m/%d/%Y at %H:%M") } else { now.format("%d/%m/%Y à %H:%M") };
+    let printed = match i18n::lang() {
+        i18n::Lang::En => now.format("%m/%d/%Y at %H:%M"),
+        i18n::Lang::Nl => now.format("%d/%m/%Y om %H:%M"),
+        i18n::Lang::Fr => now.format("%d/%m/%Y à %H:%M"),
+    };
     doc.text(&tr!("{until} · édité le {printed}", "{until} · printed {printed}", "{until} · afgedrukt {printed}"), Style::default().small().center());
     doc.feed(1);
     doc.rule('-');
