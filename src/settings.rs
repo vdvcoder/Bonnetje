@@ -34,7 +34,7 @@ pub enum Kind {
 
 /// Les réglages que l'appli peut modifier, dans l'ordre où elle les présente.
 pub const SETTINGS: &[(&str, Kind)] = &[
-    ("PRINTR_LANG", Kind::Choice(&["fr", "en"])),
+    ("PRINTR_LANG", Kind::Choice(&["fr", "en", "nl"])),
     ("PRINTR_CITY", Kind::Text),
     ("PRINTR_UNITS", Kind::Choice(&["imperial"])),
     ("PRINTR_DEVICE", Kind::Device),
@@ -105,38 +105,38 @@ pub fn is_locked(key: &str) -> bool {
 
 /// Une valeur saisie dans l'appli, vérifiée et nettoyée ; la chaîne vide efface le réglage.
 pub fn check(key: &str, value: &str) -> Result<String> {
-    let Some(kind) = kind(key) else { bail!("{}", tr!("réglage inconnu : {key}", "unknown setting: {key}")) };
+    let Some(kind) = kind(key) else { bail!("{}", tr!("réglage inconnu : {key}", "unknown setting: {key}", "onbekende instelling: {key}")) };
     let value = value.trim();
     if value.is_empty() {
         return Ok(String::new());
     }
     if value.chars().any(char::is_control) || value.len() > 500 {
-        bail!("{}", tr!("valeur invalide pour {key}", "invalid value for {key}"));
+        bail!("{}", tr!("valeur invalide pour {key}", "invalid value for {key}", "ongeldige waarde voor {key}"));
     }
     match kind {
         // Un jeton trop court empêcherait le serveur de démarrer (voir `main`).
         Kind::Secret if key == "PRINTR_TOKEN" && value.chars().count() < 16 => {
-            bail!("{}", t("le jeton doit faire au moins 16 caractères", "the token must be at least 16 characters"));
+            bail!("{}", t("le jeton doit faire au moins 16 caractères", "the token must be at least 16 characters", "het token moet minstens 16 tekens bevatten"));
         }
         Kind::Text | Kind::Secret => {}
         Kind::Choice(allowed) => {
             if !allowed.contains(&value) {
-                bail!("{}", tr!("valeur invalide pour {key}", "invalid value for {key}"));
+                bail!("{}", tr!("valeur invalide pour {key}", "invalid value for {key}", "ongeldige waarde voor {key}"));
             }
         }
         Kind::Number(min, max) => match value.parse::<u32>() {
             Ok(n) if (min..=max).contains(&n) => {}
-            _ => bail!("{}", tr!("{key} : un nombre de {min} à {max}", "{key}: a number from {min} to {max}")),
+            _ => bail!("{}", tr!("{key} : un nombre de {min} à {max}", "{key}: a number from {min} to {max}", "{key}: een getal van {min} tot {max}")),
         },
         Kind::Device => {
             if !value.starts_with("/dev/") || value.contains("..") {
-                bail!("{}", t("l'imprimante USB doit être sous /dev", "the USB printer must be under /dev"));
+                bail!("{}", t("l'imprimante USB doit être sous /dev", "the USB printer must be under /dev", "de USB-printer moet onder /dev staan"));
             }
         }
         Kind::Address => {
             let port = value.rsplit_once(':').and_then(|(h, p)| (!h.is_empty()).then_some(p));
             if port.and_then(|p| p.parse::<u16>().ok()).is_none() {
-                bail!("{}", t("adresse attendue : hôte:port", "expected address: host:port"));
+                bail!("{}", t("adresse attendue : hôte:port", "expected address: host:port", "verwacht adres: host:poort"));
             }
         }
     }
@@ -172,7 +172,7 @@ pub const RESTART_CODE: i32 = 75;
 pub fn restart_soon() {
     std::thread::spawn(|| {
         std::thread::sleep(std::time::Duration::from_millis(800));
-        eprintln!("{}", t("redémarrage pour appliquer les réglages", "restarting to apply the settings"));
+        eprintln!("{}", t("redémarrage pour appliquer les réglages", "restarting to apply the settings", "opnieuw opstarten om de instellingen toe te passen"));
         std::process::exit(RESTART_CODE);
     });
 }

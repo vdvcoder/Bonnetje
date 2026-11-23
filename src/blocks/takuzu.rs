@@ -182,20 +182,20 @@ pub fn build(difficulty: Difficulty, seed: Option<u64>, solution: bool) -> Doc {
     let seed = seed.unwrap_or_else(|| rand::rng().random_range(1..100_000));
     let (puzzle, solved, n) = generate(seed, difficulty);
     let mut doc = Doc::new();
-    let title = if solution { crate::i18n::t("Solution du takuzu", "Takuzu solution") } else { "Takuzu" };
+    let title = if solution { crate::i18n::t("Solution du takuzu", "Takuzu solution", "Oplossing van de takuzu") } else { "Takuzu" };
     doc.header(&format!("{title} · {}", difficulty.label()));
     if !solution {
         doc.text(
             crate::i18n::t(
                 "Des 0 et des 1 : jamais trois pareils à la suite, autant de 0 que de 1 par ligne et par colonne, pas deux lignes ni deux colonnes identiques.",
-                "0s and 1s: never three alike in a row, as many 0s as 1s in each row and column, no two identical rows or columns.",
+                "0s and 1s: never three alike in a row, as many 0s as 1s in each row and column, no two identical rows or columns.", "0'en en 1'en: nooit drie dezelfde na elkaar, evenveel 0'en als 1'en in elke rij en kolom, geen twee identieke rijen of kolommen.",
             ),
             Style::default().small(),
         );
     }
     doc.feed(1);
     doc.image(render(if solution { &solved } else { &puzzle }, n));
-    doc.text(&tr!("n° {seed}", "No. {seed}"), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {seed}", "No. {seed}", "Nr. {seed}"), Style::default().small().align(Align::Right));
     doc
 }
 

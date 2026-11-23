@@ -116,7 +116,7 @@ impl Console {
         let spinner = SPINNER[self.frame % SPINNER.len()];
         let text = tr!(
             "en cours ({}) · {} · {}",
-            "running ({}) · {} · {}",
+            "running ({}) · {} · {}", "actief ({}) · {} · {}",
             pending.len(),
             duration(self.started.elapsed()),
             pending.join(", ")
@@ -164,26 +164,26 @@ impl Progress for Console {
 pub fn summary(doc: &Doc, blocks: usize, destination: Option<&str>, elapsed: Duration, failures: usize) {
     let mut details = Vec::new();
     if blocks > 0 {
-        details.push(plural(blocks, t("bloc", "block")));
+        details.push(plural(blocks, t("bloc", "block", "blok")));
     }
-    details.push(tr!("≈ {} de papier", "≈ {} of paper", paper_length(doc.height_dots())));
+    details.push(tr!("≈ {} de papier", "≈ {} of paper", "≈ {} papier", paper_length(doc.height_dots())));
     if failures > 0 {
-        details.push(format!("{WARN}{}{WARN:#}", tr!("{} en échec", "{} failed", failures)));
+        details.push(format!("{WARN}{}{WARN:#}", tr!("{} en échec", "{} failed", "{} mislukt", failures)));
     }
     details.push(duration(elapsed));
     let details = details.join(&format!(" {DIM}·{DIM:#} "));
     let mark = if failures > 0 { format!("{WARN}!{WARN:#}") } else { format!("{OK}✓{OK:#}") };
     match destination {
         Some(dest) => {
-            eprintln!("{mark} {} {ACCENT}{dest}{ACCENT:#}  {DIM}│{DIM:#} {details}", t("Imprimé sur", "Printed to"))
+            eprintln!("{mark} {} {ACCENT}{dest}{ACCENT:#}  {DIM}│{DIM:#} {details}", t("Imprimé sur", "Printed to", "Afgedrukt op"))
         }
-        None => eprintln!("{mark} {}  {DIM}│{DIM:#} {details}", t("Aperçu", "Preview")),
+        None => eprintln!("{mark} {}  {DIM}│{DIM:#} {details}", t("Aperçu", "Preview", "Voorbeeld")),
     }
 }
 
 /// Erreur fatale, avec la chaîne des causes.
 pub fn error(e: &anyhow::Error) {
-    eprintln!("{FAIL}✗ {}{FAIL:#} {BOLD}{e}{BOLD:#}", t("Erreur :", "Error:"));
+    eprintln!("{FAIL}✗ {}{FAIL:#} {BOLD}{e}{BOLD:#}", t("Erreur :", "Error:", "Fout:"));
     for cause in e.chain().skip(1) {
         eprintln!("  {DIM}↳{DIM:#} {cause}");
     }
@@ -199,10 +199,10 @@ pub fn banner(
     users: usize,
 ) {
     let row = |key: &str, value: String| eprintln!("  {DIM}{key:<11}{DIM:#} {value}");
-    eprintln!("{BOLD}printr {}{BOLD:#} {DIM}·{DIM:#} {}", env!("CARGO_PKG_VERSION"), t("serveur prêt", "server ready"));
+    eprintln!("{BOLD}printr {}{BOLD:#} {DIM}·{DIM:#} {}", env!("CARGO_PKG_VERSION"), t("serveur prêt", "server ready", "server klaar"));
     let shown = listen.replace("0.0.0.0", "localhost");
     row("interface", format!("{ACCENT}http://{shown}{ACCENT:#}"));
-    row(t("imprimante", "printer"), destination.to_owned());
+    row(t("imprimante", "printer", "printer"), destination.to_owned());
     row(
         "claude",
         match claude {
@@ -211,12 +211,12 @@ pub fn banner(
                 "{WARN}✗{WARN:#} {}",
                 t(
                     "ni ANTHROPIC_API_KEY ni CLI Claude (horoscope et mot du jour indisponibles)",
-                    "no ANTHROPIC_API_KEY nor Claude CLI (horoscope and word of the day unavailable)"
+                    "no ANTHROPIC_API_KEY nor Claude CLI (horoscope and word of the day unavailable)", "geen ANTHROPIC_API_KEY en geen Claude CLI (horoscoop en woord van de dag niet beschikbaar)"
                 )
             ),
         },
     );
-    row("cache", cache.map_or_else(|| format!("{WARN}{}{WARN:#}", t("désactivé", "disabled")), str::to_owned));
+    row("cache", cache.map_or_else(|| format!("{WARN}{}{WARN:#}", t("désactivé", "disabled", "uitgeschakeld")), str::to_owned));
     row(
         "barnum",
         if crate::blocks::barnum::available() {
@@ -224,21 +224,21 @@ pub fn banner(
         } else {
             tr!(
                 "{WARN}✗{WARN:#} introuvable : bloc « Horoscope » indisponible (voir PRINTR_BARNUM)",
-                "{WARN}✗{WARN:#} not found: \"Horoscope\" block unavailable (see PRINTR_BARNUM)"
+                "{WARN}✗{WARN:#} not found: \"Horoscope\" block unavailable (see PRINTR_BARNUM)", "{WARN}✗{WARN:#} niet gevonden: blok \"Horoscoop\" niet beschikbaar (zie PRINTR_BARNUM)"
             )
         },
     );
-    row(t("données", "data"), data.to_owned());
+    row(t("données", "data", "gegevens"), data.to_owned());
     row("versions", crate::update::summary());
     row(
-        t("comptes", "accounts"),
+        t("comptes", "accounts", "accounts"),
         if users == 0 {
             tr!(
                 "{WARN}aucun{WARN:#} : ouvre l'interface pour créer le premier",
-                "{WARN}none{WARN:#}: open the interface to create the first"
+                "{WARN}none{WARN:#}: open the interface to create the first", "{WARN}geen{WARN:#}: open de interface om de eerste aan te maken"
             )
         } else {
-            plural(users, t("utilisateur", "user"))
+            plural(users, t("utilisateur", "user", "gebruiker"))
         },
     );
     eprintln!();

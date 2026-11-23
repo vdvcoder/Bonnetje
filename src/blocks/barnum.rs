@@ -91,7 +91,7 @@ pub fn available() -> bool {
 
 /// Lance Barnum et lit sa réponse JSON.
 fn run(command: &[String], who: &Who, date: NaiveDate, variant: Option<&str>, english: bool) -> Result<Reading> {
-    let (program, base) = command.split_first().context(i18n::t("commande Barnum vide", "empty Barnum command"))?;
+    let (program, base) = command.split_first().context(i18n::t("commande Barnum vide", "empty Barnum command", "leeg Barnum-commando"))?;
     let mut cmd = Command::new(program);
     cmd.args(base);
     // Options d'abord, sous la forme `--option=valeur`, puis `--` : un signe ou une variante
@@ -112,10 +112,10 @@ fn run(command: &[String], who: &Who, date: NaiveDate, variant: Option<&str>, en
             "{}",
             tr!(
                 "Barnum introuvable (« {program} ») : installe-le ou définis PRINTR_BARNUM",
-                "Barnum not found (\"{program}\"): install it or set PRINTR_BARNUM"
+                "Barnum not found (\"{program}\"): install it or set PRINTR_BARNUM", "Barnum niet gevonden (\"{program}\"): installeer het of stel PRINTR_BARNUM in"
             )
         ),
-        _ => anyhow::anyhow!("{}", tr!("impossible de lancer Barnum : {e}", "could not start Barnum: {e}")),
+        _ => anyhow::anyhow!("{}", tr!("impossible de lancer Barnum : {e}", "could not start Barnum: {e}", "kon Barnum niet starten: {e}")),
     })?;
 
     // Barnum répond en quelques dizaines de millisecondes ; au-delà de TIMEOUT, on abandonne.
@@ -126,7 +126,7 @@ fn run(command: &[String], who: &Who, date: NaiveDate, variant: Option<&str>, en
         }
         if start.elapsed() > TIMEOUT {
             let _ = child.kill();
-            bail!("{}", i18n::t("Barnum ne répond pas", "Barnum is not responding"));
+            bail!("{}", i18n::t("Barnum ne répond pas", "Barnum is not responding", "Barnum reageert niet"));
         }
         std::thread::sleep(Duration::from_millis(10));
     };
@@ -136,13 +136,13 @@ fn run(command: &[String], who: &Who, date: NaiveDate, variant: Option<&str>, en
     child.stderr.take().map(|mut s| s.read_to_string(&mut stderr));
     if !status.success() {
         // « barnum: error: signe inconnu : … » : on garde le message utile.
-        let message = stderr.lines().last().unwrap_or(i18n::t("erreur inconnue", "unknown error"));
+        let message = stderr.lines().last().unwrap_or(i18n::t("erreur inconnue", "unknown error", "onbekende fout"));
         if english && message.contains("--lang") {
             return Err(OldBarnum.into());
         }
         bail!("{}", message.trim_start_matches("barnum: error: "));
     }
-    serde_json::from_str(&stdout).context(i18n::t("réponse de Barnum illisible", "Barnum response unreadable"))
+    serde_json::from_str(&stdout).context(i18n::t("réponse de Barnum illisible", "Barnum response unreadable", "antwoord van Barnum onleesbaar"))
 }
 
 /// Barnum antérieur à 0.3 : il ne connaît pas `--lang`.
@@ -179,7 +179,7 @@ fn render_in_language(r: &Reading, sky: bool) -> Doc {
     let mut doc = Doc::new();
     doc.header(&format!("Horoscope · {}", r.signe));
     if let Some(moon) = &r.lune {
-        doc.text(&tr!("Lune : {} en {}", "Moon: {} in {}", moon.phase, moon.signe), Style::default().small().center());
+        doc.text(&tr!("Lune : {} en {}", "Moon: {} in {}", "Maan: {} in {}", moon.phase, moon.signe), Style::default().small().center());
     }
     doc.feed(1);
     doc.text(&r.climat, Style::default());
@@ -191,27 +191,27 @@ fn render_in_language(r: &Reading, sky: bool) -> Doc {
     }
     if !r.conseil.is_empty() {
         doc.feed(1);
-        doc.hanging(i18n::t("Conseil : ", "Advice: "), &r.conseil, Style::default().bold());
+        doc.hanging(i18n::t("Conseil : ", "Advice: ", "Advies: "), &r.conseil, Style::default().bold());
     }
     let mut extras = Vec::new();
     if !r.couleur.is_empty() {
-        extras.push(tr!("couleur {}", "color {}", r.couleur));
+        extras.push(tr!("couleur {}", "color {}", "kleur {}", r.couleur));
     }
     if let Some(n) = r.chiffre {
-        extras.push(tr!("chiffre {n}", "number {n}"));
+        extras.push(tr!("chiffre {n}", "number {n}", "nummer {n}"));
     }
     if !r.humeur.is_empty() {
-        extras.push(tr!("humeur {}", "mood {}", r.humeur));
+        extras.push(tr!("humeur {}", "mood {}", "stemming {}", r.humeur));
     }
     if !extras.is_empty() {
         doc.text(&i18n::capitalize(&extras.join(" · ")), Style::default().small().center());
     }
     if sky && !r.ciel.is_empty() {
         doc.feed(1);
-        doc.text(i18n::t("Le ciel du jour", "Today's sky"), Style::default().small().bold().center());
+        doc.text(i18n::t("Le ciel du jour", "Today's sky", "De lucht van vandaag"), Style::default().small().bold().center());
         for b in &r.ciel {
             // Même largeur pour toutes les lignes : les colonnes restent alignées une fois centrées.
-            let retro = if b.retrograde { i18n::t("rétrograde", "retrograde") } else { "" };
+            let retro = if b.retrograde { i18n::t("rétrograde", "retrograde", "retrograde") } else { "" };
             let line = format!("{:<9}{:<12}{:>3.0}°  {retro:<10}", b.astre, b.signe, b.degre);
             doc.line(&line, Style::default().small().center());
         }

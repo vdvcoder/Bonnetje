@@ -310,20 +310,20 @@ pub fn build(difficulty: Difficulty, seed: Option<u64>, solution: bool) -> Doc {
     let seed = seed.unwrap_or_else(|| rand::rng().random_range(1..100_000));
     let puzzle = generate(seed, difficulty);
     let mut doc = Doc::new();
-    let title = if solution { crate::i18n::t("Solution du kakuro", "Kakuro solution") } else { "Kakuro" };
+    let title = if solution { crate::i18n::t("Solution du kakuro", "Kakuro solution", "Kakuro-oplossing") } else { "Kakuro" };
     doc.header(&format!("{title} · {}", difficulty.label()));
     if !solution {
         doc.text(
             crate::i18n::t(
                 "Chaque tranche fait la somme indiquée (à droite : horizontale, en bas : verticale), avec des chiffres de 1 à 9 tous différents.",
-                "Each run adds up to its clue (right: across, below: down), using digits 1 to 9, all different.",
+                "Each run adds up to its clue (right: across, below: down), using digits 1 to 9, all different.", "Elke reeks heeft als som de aanwijzing (rechts: horizontaal, onder: verticaal), met cijfers van 1 tot 9, allemaal verschillend.",
             ),
             Style::default().small(),
         );
     }
     doc.feed(1);
     doc.image(render(&puzzle, solution));
-    doc.text(&tr!("n° {seed}", "No. {seed}"), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {seed}", "No. {seed}", "Nr. {seed}"), Style::default().small().align(Align::Right));
     doc
 }
 

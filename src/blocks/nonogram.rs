@@ -230,7 +230,7 @@ pub fn build(number: Option<usize>, solution: bool) -> anyhow::Result<Doc> {
         Some(n) if (1..=PICTURES.len()).contains(&n) => n - 1,
         Some(n) => anyhow::bail!(
             "{}",
-            tr!("logimage n° {n} inconnu (1 à {})", "nonogram No. {n} unknown (1 to {})", PICTURES.len())
+            tr!("logimage n° {n} inconnu (1 à {})", "nonogram No. {n} unknown (1 to {})", "nonogram nr. {n} onbekend (1 tot {})", PICTURES.len())
         ),
         None => rand::rng().random_range(0..PICTURES.len()),
     };
@@ -240,24 +240,24 @@ pub fn build(number: Option<usize>, solution: bool) -> anyhow::Result<Doc> {
 
     let mut doc = Doc::new();
     doc.header(if solution {
-        crate::i18n::t("Solution du logimage", "Nonogram solution")
+        crate::i18n::t("Solution du logimage", "Nonogram solution", "Nonogram-oplossing")
     } else {
-        crate::i18n::t("Logimage", "Nonogram")
+        crate::i18n::t("Logimage", "Nonogram", "Nonogram")
     });
     if solution {
-        doc.text(&tr!("C'était… {name} !", "It was: {name}!"), Style::default().small().center());
+        doc.text(&tr!("C'était… {name} !", "It was: {name}!", "Het was: {name}!"), Style::default().small().center());
     } else {
         doc.text(
             crate::i18n::t(
                 "Noircis les cases : les nombres donnent les suites de cases noires, dans l'ordre.",
-                "Shade the cells: the numbers give the runs of shaded cells, in order.",
+                "Shade the cells: the numbers give the runs of shaded cells, in order.", "Kleur de vakjes in: de getallen geven de reeksen ingekleurde vakjes, in volgorde.",
             ),
             Style::default().small().center(),
         );
     }
     doc.feed(1);
     doc.image(render(&grid, solution));
-    doc.text(&tr!("n° {}", "No. {}", index + 1), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {}", "No. {}", "Nr. {}", index + 1), Style::default().small().align(Align::Right));
     Ok(doc)
 }
 

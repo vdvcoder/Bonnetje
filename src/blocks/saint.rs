@@ -127,7 +127,7 @@ pub fn of(date: NaiveDate) -> &'static str {
 
 pub fn build(date: NaiveDate) -> Doc {
     let mut doc = Doc::new();
-    doc.text(&tr!("Fête du jour : {}", "French name day: {}", of(date)), Style::default().center());
+    doc.text(&tr!("Fête du jour : {}", "French name day: {}", "Franse naamdag: {}", of(date)), Style::default().center());
     doc
 }
 

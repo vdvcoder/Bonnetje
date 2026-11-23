@@ -290,7 +290,7 @@ impl Doc {
                     }
                 }
                 Op::Qr { data, .. } => {
-                    let label = tr!("▣ QR : {data}", "▣ QR: {data}");
+                    let label = tr!("▣ QR : {data}", "▣ QR: {data}", "▣ QR: {data}");
                     let label: String = label.chars().take(paper()).collect();
                     let len = label.chars().count();
                     let pad = (paper() - len) / 2;

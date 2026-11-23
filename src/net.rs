@@ -117,7 +117,7 @@ impl Resolver for PublicOnly {
                 std::io::ErrorKind::PermissionDenied,
                 tr!(
                     "{host} : adresse du réseau local, refusée depuis l'appli",
-                    "{host}: local network address, refused by the app"
+                    "{host}: local network address, refused by the app", "{host}: lokaal netwerkadres, geweigerd door de app"
                 ),
             )));
         }

@@ -224,18 +224,18 @@ fn fetch(ctx: &Ctx, url: &str) -> Result<String> {
     if !url.starts_with("http://") && !url.starts_with("https://") {
         // Ligne de commande seulement : une page enregistrée sur la machine.
         ctx.check_local_file(url)?;
-        return std::fs::read_to_string(url).with_context(|| tr!("{url} illisible", "cannot read {url}"));
+        return std::fs::read_to_string(url).with_context(|| tr!("{url} illisible", "cannot read {url}", "kan {url} niet lezen"));
     }
     ctx.http
         .get(url)
         .header("User-Agent", concat!("printr/", env!("CARGO_PKG_VERSION"), " (personal receipt printer)"))
         .call()
-        .with_context(|| tr!("page injoignable : {url}", "page unreachable: {url}"))?
+        .with_context(|| tr!("page injoignable : {url}", "page unreachable: {url}", "pagina onbereikbaar: {url}"))?
         .body_mut()
         .with_config()
         .limit(5 * 1024 * 1024)
         .read_to_string()
-        .with_context(|| tr!("page illisible : {url}", "page unreadable: {url}"))
+        .with_context(|| tr!("page illisible : {url}", "page unreadable: {url}", "pagina onleesbaar: {url}"))
 }
 
 /// Recette rédigée par Claude, au format de sortie demandé.
@@ -346,7 +346,7 @@ fn written(claude: &crate::claude::Claude, system: &str, prompt: &str) -> Result
     anyhow::ensure!(
         !w.ingredients.is_empty() && !w.steps.is_empty(),
         "{}",
-        i18n::t("réponse de Claude incomplète", "incomplete answer from Claude")
+        i18n::t("réponse de Claude incomplète", "incomplete answer from Claude", "onvolledig antwoord van Claude")
     );
     let minutes = |m: u32| (m > 0).then(|| format!("PT{m}M"));
     Ok(Recipe {
@@ -363,24 +363,24 @@ fn written(claude: &crate::claude::Claude, system: &str, prompt: &str) -> Result
 /// Le ticket d'une recette : titre, parts et temps, ingrédients à cocher, étapes.
 fn render(recipe: &Recipe, steps: bool) -> Doc {
     let mut doc = Doc::new();
-    doc.header(i18n::t("Recette", "Recipe"));
+    doc.header(i18n::t("Recette", "Recipe", "Recept"));
     doc.feed(1);
     if !recipe.name.is_empty() {
         doc.text(&recipe.name, Style::default().bold().center().size(2));
     }
     let mut facts = Vec::new();
     if let Some(s) = &recipe.servings {
-        let s = if s.chars().all(|c| c.is_ascii_digit()) { tr!("{s} parts", "serves {s}") } else { s.clone() };
+        let s = if s.chars().all(|c| c.is_ascii_digit()) { tr!("{s} parts", "serves {s}", "{s} personen") } else { s.clone() };
         facts.push(s);
     }
     match (&recipe.total, &recipe.prep, &recipe.cook) {
-        (Some(t), _, _) => facts.push(tr!("{} en tout", "{} total", duration(t))),
+        (Some(t), _, _) => facts.push(tr!("{} en tout", "{} total", "{} in totaal", duration(t))),
         (None, p, c) => {
             if let Some(p) = p {
-                facts.push(tr!("préparation {}", "prep {}", duration(p)));
+                facts.push(tr!("préparation {}", "prep {}", "voorbereiding {}", duration(p)));
             }
             if let Some(c) = c {
-                facts.push(tr!("cuisson {}", "cook {}", duration(c)));
+                facts.push(tr!("cuisson {}", "cook {}", "bereiding {}", duration(c)));
             }
         }
     }
@@ -389,14 +389,14 @@ fn render(recipe: &Recipe, steps: bool) -> Doc {
     }
     if !recipe.ingredients.is_empty() {
         doc.feed(1);
-        doc.text(i18n::t("Ingrédients", "Ingredients"), Style::default().bold().underline());
+        doc.text(i18n::t("Ingrédients", "Ingredients", "Ingrediënten"), Style::default().bold().underline());
         for item in &recipe.ingredients {
             doc.hanging("[ ] ", item, Style::default());
         }
     }
     if steps && !recipe.steps.is_empty() {
         doc.feed(1);
-        doc.text(i18n::t("Étapes", "Steps"), Style::default().bold().underline());
+        doc.text(i18n::t("Étapes", "Steps", "Stappen"), Style::default().bold().underline());
         let mut n = 0;
         for step in &recipe.steps {
             match step {
@@ -418,7 +418,7 @@ fn render(recipe: &Recipe, steps: bool) -> Doc {
 pub fn build_with_claude(ctx: &Ctx, dish: &str, servings: u8, steps: bool) -> Result<Doc> {
     let dish = dish.trim();
     if dish.is_empty() {
-        bail!("{}", i18n::t("indiquer le plat", "give the dish"));
+        bail!("{}", i18n::t("indiquer le plat", "give the dish", "geef het gerecht op"));
     }
     let servings = servings.clamp(1, 20);
     let key = format!("recette-claude-{}-{servings}-{}", dish.to_lowercase(), i18n::lang().code());
@@ -429,8 +429,8 @@ pub fn build_with_claude(ctx: &Ctx, dish: &str, servings: u8, steps: bool) -> Re
         Some(r) => r,
         None if ctx.preview => {
             return Ok(super::ai_placeholder(
-                &tr!("Recette · {dish}", "Recipe · {dish}"),
-                i18n::t("Le détail de la recette", "The recipe"),
+                &tr!("Recette · {dish}", "Recipe · {dish}", "Recept · {dish}"),
+                i18n::t("Le détail de la recette", "The recipe", "Het recept"),
             ));
         }
         None => {
@@ -445,7 +445,7 @@ pub fn build_with_claude(ctx: &Ctx, dish: &str, servings: u8, steps: bool) -> Re
     let mut doc = render(&recipe, steps);
     doc.from_cache = from_cache;
     doc.text(
-        i18n::t("Recette rédigée par Claude", "Recipe written by Claude"),
+        i18n::t("Recette rédigée par Claude", "Recipe written by Claude", "Recept geschreven door Claude"),
         Style::default().small().align(Align::Right),
     );
     Ok(doc)
@@ -467,7 +467,7 @@ fn ingredient_list(text: &str) -> Vec<String> {
 pub fn build_from_ingredients(ctx: &Ctx, ingredients: &str, servings: u8, wish: &str, steps: bool) -> Result<Doc> {
     let items = ingredient_list(ingredients);
     if items.is_empty() {
-        bail!("{}", i18n::t("indiquer les ingrédients", "give the ingredients"));
+        bail!("{}", i18n::t("indiquer les ingrédients", "give the ingredients", "geef de ingrediënten op"));
     }
     let servings = servings.clamp(1, 20);
     let wish: String = wish.trim().chars().take(80).collect();
@@ -483,8 +483,8 @@ pub fn build_from_ingredients(ctx: &Ctx, ingredients: &str, servings: u8, wish: 
         Some(r) => r,
         None if ctx.preview => {
             return Ok(super::ai_placeholder(
-                i18n::t("Qu'est-ce qu'on mange ?", "What's for dinner?"),
-                &tr!("Une recette avec : {}", "A recipe with: {}", items.join(", ")),
+                i18n::t("Qu'est-ce qu'on mange ?", "What's for dinner?", "Wat eten we vanavond?"),
+                &tr!("Une recette avec : {}", "A recipe with: {}", "Een recept met: {}", items.join(", ")),
             ));
         }
         None => {
@@ -500,11 +500,11 @@ pub fn build_from_ingredients(ctx: &Ctx, ingredients: &str, servings: u8, wish: 
     doc.from_cache = from_cache;
     doc.feed(1);
     doc.text(
-        &tr!("Avec ce qu'il y avait : {}", "With what was at hand: {}", items.join(", ")),
+        &tr!("Avec ce qu'il y avait : {}", "With what was at hand: {}", "Met wat er was: {}", items.join(", ")),
         Style::default().small(),
     );
     doc.text(
-        i18n::t("Recette rédigée par Claude", "Recipe written by Claude"),
+        i18n::t("Recette rédigée par Claude", "Recipe written by Claude", "Recept geschreven door Claude"),
         Style::default().small().align(Align::Right),
     );
     Ok(doc)
@@ -513,7 +513,7 @@ pub fn build_from_ingredients(ctx: &Ctx, ingredients: &str, servings: u8, wish: 
 pub fn build(ctx: &Ctx, url: &str, steps: bool, qr: bool) -> Result<Doc> {
     let url = url.trim();
     if url.is_empty() {
-        bail!("{}", i18n::t("indiquer l'adresse de la recette", "give the recipe address"));
+        bail!("{}", i18n::t("indiquer l'adresse de la recette", "give the recipe address", "geef het adres van het recept op"));
     }
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     url.hash(&mut hasher);
@@ -527,7 +527,7 @@ pub fn build(ctx: &Ctx, url: &str, steps: bool, qr: bool) -> Result<Doc> {
             let recipe = parse(&fetch(ctx, url)?).with_context(|| {
                 tr!(
                     "pas de recette lisible sur {} (données schema.org absentes)",
-                    "no readable recipe on {} (no schema.org data)",
+                    "no readable recipe on {} (no schema.org data)", "geen leesbaar recept op {} (geen schema.org-gegevens)",
                     host(url)
                 )
             })?;

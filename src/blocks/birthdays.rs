@@ -93,7 +93,7 @@ pub fn build(list: &str, family: &str, upcoming: u8, today: NaiveDate) -> Result
             "{}",
             i18n::t(
                 "aucun anniversaire lisible (une ligne par personne : « Léo, 12/03/2014 »)",
-                "no readable birthday (one line per person: \"Leo, 03/12/2014\")"
+                "no readable birthday (one line per person: \"Leo, 03/12/2014\")", "geen leesbare verjaardag (één regel per persoon: \"Leo, 03/12/2014\")"
             )
         );
     }
@@ -101,16 +101,16 @@ pub fn build(list: &str, family: &str, upcoming: u8, today: NaiveDate) -> Result
     dated.sort_by_key(|(d, b)| (*d, b.name.clone()));
 
     let mut doc = Doc::new();
-    doc.header(i18n::t("Anniversaires", "Birthdays"));
+    doc.header(i18n::t("Anniversaires", "Birthdays", "Verjaardagen"));
     let today_ones: Vec<&Birthday> = dated.iter().filter(|(d, _)| *d == today).map(|(_, b)| *b).collect();
     for b in &today_ones {
         doc.feed(1);
         doc.text(
-            &tr!("Joyeux anniversaire {} !", "Happy birthday {}!", b.name),
+            &tr!("Joyeux anniversaire {} !", "Happy birthday {}!", "Gefeliciteerd {}!", b.name),
             Style::default().bold().center().size(2),
         );
         if let Some(a) = age(b, today) {
-            doc.text(&tr!("{a} ans aujourd'hui", "{a} today"), Style::default().center());
+            doc.text(&tr!("{a} ans aujourd'hui", "{a} today", "{a} vandaag"), Style::default().center());
         }
     }
     if !today_ones.is_empty() {
@@ -121,15 +121,15 @@ pub fn build(list: &str, family: &str, upcoming: u8, today: NaiveDate) -> Result
         dated.iter().filter(|(d, _)| *d != today).take(upcoming.clamp(1, 10) as usize).collect();
     if !later.is_empty() {
         doc.feed(1);
-        doc.text(i18n::t("Les prochains", "Coming up"), Style::default().bold().underline());
+        doc.text(i18n::t("Les prochains", "Coming up", "Binnenkort"), Style::default().bold().underline());
         for (date, b) in later {
             let days = (*date - today).num_days();
             let when = match days {
-                1 => i18n::t("demain", "tomorrow").to_owned(),
-                n => tr!("J-{n}", "in {n} days"),
+                1 => i18n::t("demain", "tomorrow", "morgen").to_owned(),
+                n => tr!("J-{n}", "in {n} days", "over {n} dagen"),
             };
             let who = match age(b, *date) {
-                Some(a) => tr!("{}, {a} ans", "{}, turns {a}", b.name),
+                Some(a) => tr!("{}, {a} ans", "{}, turns {a}", "{}, wordt {a}", b.name),
                 None => b.name.clone(),
             };
             doc.hanging("- ", &format!("{} · {who} · {when}", short_date(*date)), Style::default());

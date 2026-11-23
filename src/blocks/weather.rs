@@ -52,32 +52,32 @@ struct Daily {
 fn describe(code: u8) -> &'static str {
     use crate::i18n::t;
     match code {
-        0 => t("Ciel dégagé", "Clear sky"),
-        1 => t("Plutôt dégagé", "Mainly clear"),
-        2 => t("Partiellement nuageux", "Partly cloudy"),
-        3 => t("Couvert", "Overcast"),
-        45 => t("Brouillard", "Fog"),
-        48 => t("Brouillard givrant", "Rime fog"),
-        51 => t("Bruine légère", "Light drizzle"),
-        53 => t("Bruine", "Drizzle"),
-        55 => t("Bruine dense", "Dense drizzle"),
-        56 | 57 => t("Bruine verglaçante", "Freezing drizzle"),
-        61 => t("Pluie faible", "Light rain"),
-        63 => t("Pluie", "Rain"),
-        65 => t("Forte pluie", "Heavy rain"),
-        66 | 67 => t("Pluie verglaçante", "Freezing rain"),
-        71 => t("Neige faible", "Light snow"),
-        73 => t("Neige", "Snow"),
-        75 => t("Forte neige", "Heavy snow"),
-        77 => t("Grains de neige", "Snow grains"),
-        80 => t("Averses faibles", "Light showers"),
-        81 => t("Averses", "Showers"),
-        82 => t("Fortes averses", "Heavy showers"),
-        85 => t("Averses de neige", "Snow showers"),
-        86 => t("Fortes averses de neige", "Heavy snow showers"),
-        95 => t("Orage", "Thunderstorm"),
-        96 | 99 => t("Orage et grêle", "Thunderstorm with hail"),
-        _ => t("Temps indéterminé", "Unknown weather"),
+        0 => t("Ciel dégagé", "Clear sky", "Heldere hemel"),
+        1 => t("Plutôt dégagé", "Mainly clear", "Overwegend helder"),
+        2 => t("Partiellement nuageux", "Partly cloudy", "Half bewolkt"),
+        3 => t("Couvert", "Overcast", "Bewolkt"),
+        45 => t("Brouillard", "Fog", "Mist"),
+        48 => t("Brouillard givrant", "Rime fog", "Rijpmist"),
+        51 => t("Bruine légère", "Light drizzle", "Lichte motregen"),
+        53 => t("Bruine", "Drizzle", "Motregen"),
+        55 => t("Bruine dense", "Dense drizzle", "Dichte motregen"),
+        56 | 57 => t("Bruine verglaçante", "Freezing drizzle", "Ijzel-motregen"),
+        61 => t("Pluie faible", "Light rain", "Lichte regen"),
+        63 => t("Pluie", "Rain", "Regen"),
+        65 => t("Forte pluie", "Heavy rain", "Zware regen"),
+        66 | 67 => t("Pluie verglaçante", "Freezing rain", "Ijzelregen"),
+        71 => t("Neige faible", "Light snow", "Lichte sneeuw"),
+        73 => t("Neige", "Snow", "Sneeuw"),
+        75 => t("Forte neige", "Heavy snow", "Zware sneeuw"),
+        77 => t("Grains de neige", "Snow grains", "Korrelsneeuw"),
+        80 => t("Averses faibles", "Light showers", "Lichte buien"),
+        81 => t("Averses", "Showers", "Buien"),
+        82 => t("Fortes averses", "Heavy showers", "Zware buien"),
+        85 => t("Averses de neige", "Snow showers", "Sneeuwbuien"),
+        86 => t("Fortes averses de neige", "Heavy snow showers", "Zware sneeuwbuien"),
+        95 => t("Orage", "Thunderstorm", "Onweer"),
+        96 | 99 => t("Orage et grêle", "Thunderstorm with hail", "Onweer met hagel"),
+        _ => t("Temps indéterminé", "Unknown weather", "Onbekend weer"),
     }
 }
 
@@ -94,12 +94,12 @@ pub fn locate(agent: &ureq::Agent, location: &str) -> Result<Place> {
         .query("count", "1")
         .query("language", i18n::lang().code())
         .call()
-        .context(i18n::t("géocodage injoignable", "geocoding unreachable"))?
+        .context(i18n::t("géocodage injoignable", "geocoding unreachable", "geocodering onbereikbaar"))?
         .body_mut()
         .read_json()?;
     match geo.results.and_then(|r| r.into_iter().next()) {
         Some(place) => Ok(place),
-        None => bail!("{}", tr!("lieu introuvable : {location}", "place not found: {location}")),
+        None => bail!("{}", tr!("lieu introuvable : {location}", "place not found: {location}", "plaats niet gevonden: {location}")),
     }
 }
 
@@ -154,25 +154,25 @@ pub fn build(agent: &ureq::Agent, location: &str, days: u8, show: Show) -> Resul
         .query("timezone", "auto")
         .query("forecast_days", days.to_string())
         .call()
-        .context(i18n::t("Open-Meteo injoignable", "Open-Meteo unreachable"))?
+        .context(i18n::t("Open-Meteo injoignable", "Open-Meteo unreachable", "Open-Meteo onbereikbaar"))?
         .body_mut()
         .read_json()?;
     let (c, d) = (&f.current, &f.daily);
     let pct = |v: Option<f64>| v.map_or("-".to_owned(), |p| format!("{p:.0}%"));
 
     let mut doc = Doc::new();
-    doc.header(&tr!("Météo · {}", "Weather · {}", place.name));
+    doc.header(&tr!("Météo · {}", "Weather · {}", "Weer · {}", place.name));
     doc.image(centered(weather_icon::render(Sky::from_code(c.weather_code), TODAY_ICON)));
     doc.text(describe(c.weather_code), Style::default().bold().center());
     doc.text(
-        &tr!("{} (ressenti {})", "{} (feels {})", temp(c.temperature_2m, units), temp(c.apparent_temperature, units)),
+        &tr!("{} (ressenti {})", "{} (feels {})", "{} (voelt als {})", temp(c.temperature_2m, units), temp(c.apparent_temperature, units)),
         Style::default().size(2).center(),
     );
     doc.feed(1);
     doc.text(
         &tr!(
             "Min {} · Max {} · Pluie {}",
-            "Min {} · Max {} · Rain {}",
+            "Min {} · Max {} · Rain {}", "Min {} · Max {} · Regen {}",
             temp(d.temperature_2m_min[0], units),
             temp(d.temperature_2m_max[0], units),
             pct(d.precipitation_probability_max[0])
@@ -182,13 +182,13 @@ pub fn build(agent: &ureq::Agent, location: &str, days: u8, show: Show) -> Resul
     if show.wind {
         let uv = d.uv_index_max[0].map_or("-".to_owned(), |u| format!("{u:.0}"));
         doc.text(
-            &tr!("Vent {} · UV {uv}", "Wind {} · UV {uv}", speed(c.wind_speed_10m, units)),
+            &tr!("Vent {} · UV {uv}", "Wind {} · UV {uv}", "Wind {} · UV {uv}", speed(c.wind_speed_10m, units)),
             Style::default().center(),
         );
     }
     if show.sun {
         doc.text(
-            &tr!("Soleil {} - {}", "Sun {} - {}", hour(&d.sunrise[0]), hour(&d.sunset[0])),
+            &tr!("Soleil {} - {}", "Sun {} - {}", "Zon {} - {}", hour(&d.sunrise[0]), hour(&d.sunset[0])),
             Style::default().center(),
         );
     }
@@ -202,7 +202,7 @@ pub fn build(agent: &ureq::Agent, location: &str, days: u8, show: Show) -> Resul
             sky: Sky::from_code(d.weather_code[0]),
         };
         doc.feed(1);
-        doc.text(i18n::t("Comment s'habiller", "What to wear"), Style::default().bold().underline());
+        doc.text(i18n::t("Comment s'habiller", "What to wear", "Wat aantrekken"), Style::default().bold().underline());
         for advice in what_to_wear(&today) {
             doc.hanging("- ", &advice, Style::default());
         }
@@ -242,17 +242,17 @@ fn what_to_wear(day: &Today) -> Vec<String> {
     let mut out = Vec::new();
     let layer = |t: f64| {
         if t < 0.0 {
-            i18n::t("manteau chaud, bonnet, écharpe et gants", "warm coat, hat, scarf and gloves")
+            i18n::t("manteau chaud, bonnet, écharpe et gants", "warm coat, hat, scarf and gloves", "warme jas, muts, sjaal en handschoenen")
         } else if t < 8.0 {
-            i18n::t("manteau et bonnet", "coat and hat")
+            i18n::t("manteau et bonnet", "coat and hat", "jas en muts")
         } else if t < 14.0 {
-            i18n::t("une veste ou un bon pull", "a jacket or a warm sweater")
+            i18n::t("une veste ou un bon pull", "a jacket or a warm sweater", "een jasje of een warme trui")
         } else if t < 19.0 {
-            i18n::t("un pull léger ou un gilet", "a light sweater or a cardigan")
+            i18n::t("un pull léger ou un gilet", "a light sweater or a cardigan", "een lichte trui of een vest")
         } else if t < 25.0 {
-            i18n::t("un t-shirt suffit", "a t-shirt is enough")
+            i18n::t("un t-shirt suffit", "a t-shirt is enough", "een t-shirt volstaat")
         } else {
-            i18n::t("tenue légère, et de l'eau", "light clothes, and some water")
+            i18n::t("tenue légère, et de l'eau", "light clothes, and some water", "lichte kleding, en wat water")
         }
     };
     let (morning, afternoon) = (layer(day.min), layer(day.max));
@@ -261,31 +261,31 @@ fn what_to_wear(day: &Today) -> Vec<String> {
     } else {
         out.push(tr!(
             "Le matin : {morning} ; l'après-midi : {afternoon}",
-            "Morning: {morning}; afternoon: {afternoon}"
+            "Morning: {morning}; afternoon: {afternoon}", "'s Ochtends: {morning}; 's middags: {afternoon}"
         ));
     }
     let wet = day.rain >= 50.0 || matches!(day.sky, Sky::Rain | Sky::Drizzle | Sky::Storm);
     if day.sky == Sky::Snow {
-        out.push(i18n::t("Bottes : il neige", "Boots: it's snowing").to_owned());
+        out.push(i18n::t("Bottes : il neige", "Boots: it's snowing", "Laarzen: het sneeuwt").to_owned());
     } else if wet && day.wind >= 40.0 {
         out.push(
             i18n::t(
                 "Un imperméable plutôt qu'un parapluie : ça souffle",
-                "A raincoat rather than an umbrella: it's windy",
+                "A raincoat rather than an umbrella: it's windy", "Een regenjas liever dan een paraplu: het waait",
             )
             .to_owned(),
         );
     } else if wet {
-        out.push(i18n::t("Prends un parapluie", "Take an umbrella").to_owned());
+        out.push(i18n::t("Prends un parapluie", "Take an umbrella", "Neem een paraplu mee").to_owned());
     } else if day.rain >= 30.0 {
-        out.push(i18n::t("Un parapluie dans le sac, au cas où", "An umbrella in the bag, just in case").to_owned());
+        out.push(i18n::t("Un parapluie dans le sac, au cas où", "An umbrella in the bag, just in case", "Een paraplu in je tas, voor alle zekerheid").to_owned());
     } else if day.wind >= 50.0 {
-        out.push(i18n::t("Coupe-vent : ça souffle fort", "Windbreaker: it's very windy").to_owned());
+        out.push(i18n::t("Coupe-vent : ça souffle fort", "Windbreaker: it's very windy", "Windjack: het waait hard").to_owned());
     }
     if day.uv >= 6.0 {
-        out.push(i18n::t("Casquette, lunettes et crème solaire", "Cap, sunglasses and sunscreen").to_owned());
+        out.push(i18n::t("Casquette, lunettes et crème solaire", "Cap, sunglasses and sunscreen", "Pet, zonnebril en zonnecrème").to_owned());
     } else if day.uv >= 3.0 && day.sky == Sky::Clear {
-        out.push(i18n::t("Lunettes de soleil", "Sunglasses").to_owned());
+        out.push(i18n::t("Lunettes de soleil", "Sunglasses", "Zonnebril").to_owned());
     }
     out
 }

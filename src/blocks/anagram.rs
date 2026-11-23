@@ -61,17 +61,17 @@ pub fn build(theme: Option<Theme>, count: u8, seed: Option<u64>) -> Doc {
     }
 
     let mut doc = Doc::new();
-    doc.header(if count > 1 { t("Mots mystères", "Mystery words") } else { t("Mot mystère", "Mystery word") });
+    doc.header(if count > 1 { t("Mots mystères", "Mystery words", "Mysterieuze woorden") } else { t("Mot mystère", "Mystery word", "Mysterieus woord") });
     for (i, (theme, form, _)) in picked.iter().enumerate() {
         doc.feed(1);
         doc.text(&spaced(&scramble(form, &mut rng)), Style::default().bold().center().size(2));
         let number = if count > 1 { format!("{}. ", i + 1) } else { String::new() };
         let letters = form.chars().count();
-        let hint = tr!("{}{} · {} lettres", "{}{} · {} letters", number, theme.label(), letters);
+        let hint = tr!("{}{} · {} lettres", "{}{} · {} letters", "{}{} · {} letters", number, theme.label(), letters);
         doc.text(&hint, Style::default().small().center());
         doc.line(&format!("{:^42}", "_ ".repeat(form.len()).trim_end()), Style::default());
     }
-    doc.text(&tr!("n° {seed}", "No. {seed}"), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {seed}", "No. {seed}", "Nr. {seed}"), Style::default().small().align(Align::Right));
     doc.feed(1);
     let answers: Vec<String> = picked
         .iter()
@@ -80,7 +80,7 @@ pub fn build(theme: Option<Theme>, count: u8, seed: Option<u64>) -> Doc {
         .collect();
     let plural = if count > 1 { "s" } else { "" };
     doc.text(
-        &tr!("Réponse{} : {}", "Answer{}: {}", plural, answers.join("  ")),
+        &tr!("Réponse{} : {}", "Answer{}: {}", "Antwoord{}: {}", plural, answers.join("  ")),
         Style::default().small().upside_down(),
     );
     doc

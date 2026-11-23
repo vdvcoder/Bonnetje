@@ -32,7 +32,7 @@ pub fn build(agent: &ureq::Agent, today: NaiveDate, count: u8) -> Result<Doc> {
         .get(&url)
         .header("User-Agent", "printr/0.1 (imprimante à tickets personnelle)")
         .call()
-        .context(i18n::t("Wikipédia injoignable", "Wikipedia unreachable"))?
+        .context(i18n::t("Wikipédia injoignable", "Wikipedia unreachable", "Wikipedia onbereikbaar"))?
         .body_mut()
         .read_json()?;
 
@@ -43,10 +43,10 @@ pub fn build(agent: &ureq::Agent, today: NaiveDate, count: u8) -> Result<Doc> {
     events.sort_by_key(|e| e.year);
 
     let mut doc = Doc::new();
-    doc.header(&tr!("Un {} dans l'histoire", "On this day, {}", i18n::day_month(today)));
+    doc.header(&tr!("Un {} dans l'histoire", "On this day, {}", "Op deze dag, {}", i18n::day_month(today)));
     for e in events {
         doc.feed(1);
-        doc.hanging(&tr!("{} : ", "{}: ", e.year.unwrap_or_default()), &i18n::capitalize(&e.text), Style::default());
+        doc.hanging(&tr!("{} : ", "{}: ", "{}: ", e.year.unwrap_or_default()), &i18n::capitalize(&e.text), Style::default());
     }
     Ok(doc)
 }

@@ -41,7 +41,7 @@ fn run_due(app: &App) {
         if !due.is_empty()
             && let Err(e) = store.save()
         {
-            eprintln!("{}", tr!("planification non enregistrée : {e:#}", "schedule not saved: {e:#}"));
+            eprintln!("{}", tr!("planification non enregistrée : {e:#}", "schedule not saved: {e:#}", "planning niet opgeslagen: {e:#}"));
         }
         due
     };
@@ -55,19 +55,19 @@ fn run_due(app: &App) {
                         "{}",
                         tr!(
                             "planification « {name} » en attente de l'imprimante",
-                            "schedule \"{name}\" waiting for the printer"
+                            "schedule \"{name}\" waiting for the printer", "planning \"{name}\" wacht op de printer"
                         )
                     ),
-                    None => eprintln!("{}", tr!("planification « {name} » imprimée", "schedule \"{name}\" printed")),
+                    None => eprintln!("{}", tr!("planification « {name} » imprimée", "schedule \"{name}\" printed", "planning \"{name}\" afgedrukt")),
                     Some(e) => eprintln!(
                         "{}",
-                        tr!("planification « {name} » en échec : {e}", "schedule \"{name}\" failed: {e}")
+                        tr!("planification « {name} » en échec : {e}", "schedule \"{name}\" failed: {e}", "planning \"{name}\" mislukt: {e}")
                     ),
                 }
             }
             Err(e) => eprintln!(
                 "{}",
-                tr!("planification « {name} » : ticket invalide ({e})", "schedule \"{name}\": invalid ticket ({e})")
+                tr!("planification « {name} » : ticket invalide ({e})", "schedule \"{name}\": invalid ticket ({e})", "planning \"{name}\": ongeldig ticket ({e})")
             ),
         }
     }

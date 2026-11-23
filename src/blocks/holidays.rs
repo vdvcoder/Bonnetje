@@ -40,21 +40,21 @@ pub fn of_year(year: i32, zone: Zone) -> Vec<(NaiveDate, &'static str)> {
     let e = easter(year);
     use crate::i18n::t;
     let mut days = vec![
-        (d(1, 1), t("Jour de l'An", "New Year's Day")),
-        (e + Duration::days(1), t("Lundi de Pâques", "Easter Monday")),
-        (d(5, 1), t("Fête du Travail", "Labour Day")),
-        (d(5, 8), t("Victoire 1945", "Victory in Europe Day")),
-        (e + Duration::days(39), t("Ascension", "Ascension Day")),
-        (e + Duration::days(50), t("Lundi de Pentecôte", "Whit Monday")),
-        (d(7, 14), t("Fête nationale", "Bastille Day")),
-        (d(8, 15), t("Assomption", "Assumption Day")),
-        (d(11, 1), t("Toussaint", "All Saints' Day")),
-        (d(11, 11), t("Armistice 1918", "Armistice Day")),
-        (d(12, 25), t("Noël", "Christmas Day")),
+        (d(1, 1), t("Jour de l'An", "New Year's Day", "Nieuwjaarsdag")),
+        (e + Duration::days(1), t("Lundi de Pâques", "Easter Monday", "Paasmaandag")),
+        (d(5, 1), t("Fête du Travail", "Labour Day", "Dag van de Arbeid")),
+        (d(5, 8), t("Victoire 1945", "Victory in Europe Day", "Dag van de Overwinning in Europa")),
+        (e + Duration::days(39), t("Ascension", "Ascension Day", "O.L.H.-Hemelvaart")),
+        (e + Duration::days(50), t("Lundi de Pentecôte", "Whit Monday", "Pinkstermaandag")),
+        (d(7, 14), t("Fête nationale", "Bastille Day", "Nationale feestdag (Frankrijk)")),
+        (d(8, 15), t("Assomption", "Assumption Day", "O.L.V.-Hemelvaart")),
+        (d(11, 1), t("Toussaint", "All Saints' Day", "Allerheiligen")),
+        (d(11, 11), t("Armistice 1918", "Armistice Day", "Wapenstilstand")),
+        (d(12, 25), t("Noël", "Christmas Day", "Kerstmis")),
     ];
     if let Zone::AlsaceMoselle = zone {
-        days.push((e - Duration::days(2), t("Vendredi saint", "Good Friday")));
-        days.push((d(12, 26), t("Saint-Étienne", "St Stephen's Day")));
+        days.push((e - Duration::days(2), t("Vendredi saint", "Good Friday", "Goede Vrijdag")));
+        days.push((d(12, 26), t("Saint-Étienne", "St Stephen's Day", "Sint-Stefanusdag")));
     }
     days.sort();
     days
@@ -82,23 +82,23 @@ pub fn build(today: NaiveDate, zone: Zone, count: u8) -> Doc {
         let days = (date - today).num_days();
         let (line, style) = match days {
             0 => (
-                tr!("Aujourd'hui c'est férié : {name} !", "Today is a public holiday: {name}!"),
+                tr!("Aujourd'hui c'est férié : {name} !", "Today is a public holiday: {name}!", "Vandaag is het feestdag: {name}!"),
                 Style::default().bold().center(),
             ),
             1 => (
-                tr!("Demain, {name} : jour férié !", "Tomorrow is a public holiday: {name}!"),
+                tr!("Demain, {name} : jour férié !", "Tomorrow is a public holiday: {name}!", "Morgen is het feestdag: {name}!"),
                 Style::default().bold().center(),
             ),
             _ if i == 0 => (
                 tr!(
                     "Prochain jour férié : {name}, {} (dans {days} jours)",
-                    "Next public holiday: {name}, {} (in {days} days)",
+                    "Next public holiday: {name}, {} (in {days} days)", "Volgende feestdag: {name}, {} (over {days} dagen)",
                     when(date)
                 ),
                 Style::default().center(),
             ),
             _ => (
-                tr!("{name} : {} (J-{days})", "{name}: {} (in {days} days)", when(date)),
+                tr!("{name} : {} (J-{days})", "{name}: {} (in {days} days)", "{name}: {} (over {days} dagen)", when(date)),
                 Style::default().small().center(),
             ),
         };

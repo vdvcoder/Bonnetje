@@ -42,11 +42,11 @@ impl Kind {
     /// La lettre de la pièce en notation algébrique (« F » pour fou en français, « B » en anglais).
     fn letter(self) -> &'static str {
         match self {
-            Kind::King => i18n::t("R", "K"),
-            Kind::Queen => i18n::t("D", "Q"),
-            Kind::Rook => i18n::t("T", "R"),
-            Kind::Bishop => i18n::t("F", "B"),
-            Kind::Knight => i18n::t("C", "N"),
+            Kind::King => i18n::t("R", "K", "K"),
+            Kind::Queen => i18n::t("D", "Q", "Q"),
+            Kind::Rook => i18n::t("T", "R", "R"),
+            Kind::Bishop => i18n::t("F", "B", "B"),
+            Kind::Knight => i18n::t("C", "N", "N"),
             Kind::Pawn => "",
         }
     }
@@ -79,7 +79,7 @@ struct Position {
 
 impl Position {
     fn parse(fen: &str) -> Result<Position> {
-        let bad = || anyhow::anyhow!("{}", i18n::t("position d'échecs invalide", "invalid chess position"));
+        let bad = || anyhow::anyhow!("{}", i18n::t("position d'échecs invalide", "invalid chess position", "ongeldige schaakstelling"));
         let mut fields = fen.split_whitespace();
         let rows = fields.next().ok_or_else(bad)?;
         let mut board = [[None; 8]; 8];
@@ -392,7 +392,7 @@ fn solution_text(position: &Position, moves: &[String]) -> Result<String> {
     for (i, text) in moves.iter().enumerate() {
         let m = uci(text)
             .filter(|m| pos.legal_moves().contains(m))
-            .with_context(|| tr!("coup invalide dans la solution : {text}", "invalid move in the solution: {text}"))?;
+            .with_context(|| tr!("coup invalide dans la solution : {text}", "invalid move in the solution: {text}", "ongeldige zet in de oplossing: {text}"))?;
         match (pos.turn, i) {
             (Color::White, _) => out.push(format!("{number}.")),
             (Color::Black, 0) => out.push(format!("{number}…")),
@@ -492,10 +492,10 @@ fn fetch(ctx: &Ctx) -> Result<Puzzle> {
         .http
         .get("https://lichess.org/api/puzzle/daily")
         .call()
-        .context(i18n::t("Lichess injoignable", "Lichess unreachable"))?
+        .context(i18n::t("Lichess injoignable", "Lichess unreachable", "Lichess onbereikbaar"))?
         .body_mut()
         .read_json()
-        .context(i18n::t("réponse de Lichess illisible", "unreadable answer from Lichess"))?;
+        .context(i18n::t("réponse de Lichess illisible", "unreadable answer from Lichess", "onleesbaar antwoord van Lichess"))?;
     if let Some(cache) = cache {
         cache.put(&key, &daily);
     }
@@ -506,22 +506,22 @@ pub fn build(ctx: &Ctx, solution: bool) -> Result<Doc> {
     let puzzle = fetch(ctx)?;
     let pos = Position::parse(&puzzle.fen)?;
     if puzzle.solution.is_empty() {
-        bail!("{}", i18n::t("problème sans solution", "puzzle without a solution"));
+        bail!("{}", i18n::t("problème sans solution", "puzzle without a solution", "puzzel zonder oplossing"));
     }
     let answer = solution_text(&pos, &puzzle.solution)?;
     let mut doc = Doc::new();
-    doc.header(i18n::t("Échecs · problème du jour", "Chess · daily puzzle"));
+    doc.header(i18n::t("Échecs · problème du jour", "Chess · daily puzzle", "Schaken · dagpuzzel"));
     doc.feed(1);
     let to_play = match pos.turn {
-        Color::White => i18n::t("Les blancs jouent et gagnent", "White to play and win"),
-        Color::Black => i18n::t("Les noirs jouent et gagnent", "Black to play and win"),
+        Color::White => i18n::t("Les blancs jouent et gagnent", "White to play and win", "Wit speelt en wint"),
+        Color::Black => i18n::t("Les noirs jouent et gagnent", "Black to play and win", "Zwart speelt en wint"),
     };
     doc.text(to_play, Style::default().bold().center());
     let moves = puzzle.solution.len().div_ceil(2);
     doc.text(
         &tr!(
             "en {moves} coup{} · niveau {}",
-            "in {moves} move{} · rating {}",
+            "in {moves} move{} · rating {}", "in {moves} zet{} · rating {}",
             if moves > 1 { "s" } else { "" },
             puzzle.rating
         ),
@@ -530,12 +530,12 @@ pub fn build(ctx: &Ctx, solution: bool) -> Result<Doc> {
     doc.feed(1);
     doc.image(board_image(&pos, puzzle.last_move.as_deref().and_then(uci))?);
     doc.text(
-        i18n::t("Encadré : le dernier coup de l'adversaire", "Framed: the opponent's last move"),
+        i18n::t("Encadré : le dernier coup de l'adversaire", "Framed: the opponent's last move", "Omkaderd: de laatste zet van de tegenstander"),
         Style::default().small().center(),
     );
     if solution {
         doc.feed(1);
-        doc.text(&tr!("Solution : {answer}", "Solution: {answer}"), Style::default().upside_down());
+        doc.text(&tr!("Solution : {answer}", "Solution: {answer}", "Oplossing: {answer}"), Style::default().upside_down());
     }
     doc.text(&format!("lichess.org/training/{}", puzzle.id), Style::default().small().center());
     Ok(doc)

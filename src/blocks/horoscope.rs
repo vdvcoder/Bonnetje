@@ -30,10 +30,10 @@ pub enum Tone {
 impl Tone {
     pub fn label(self) -> &'static str {
         match self {
-            Tone::Serious => i18n::t("sérieux", "serious"),
-            Tone::Absurd => i18n::t("farfelu", "absurd"),
-            Tone::Teasing => i18n::t("vachard", "teasing"),
-            Tone::Insulting => i18n::t("insultant", "insulting"),
+            Tone::Serious => i18n::t("sérieux", "serious", "serieus"),
+            Tone::Absurd => i18n::t("farfelu", "absurd", "absurd"),
+            Tone::Teasing => i18n::t("vachard", "teasing", "plagerig"),
+            Tone::Insulting => i18n::t("insultant", "insulting", "beledigend"),
         }
     }
 }
@@ -91,7 +91,7 @@ fn find_sign(sign: &str) -> Result<(&'static str, &'static str)> {
     match SIGNS.iter().position(|(_, _, aliases)| aliases.contains(&key.as_str())) {
         Some(i) if i18n::en() => Ok(SIGNS_EN[i]),
         Some(i) => Ok((SIGNS[i].0, SIGNS[i].1)),
-        None => bail!("{}", tr!("signe inconnu : {sign}", "unknown sign: {sign}")),
+        None => bail!("{}", tr!("signe inconnu : {sign}", "unknown sign: {sign}", "onbekend sterrenbeeld: {sign}")),
     }
 }
 
@@ -170,7 +170,7 @@ pub fn build(ctx: &Ctx, sign: &str, tone: Tone) -> Result<Doc> {
     let h = match cached {
         Some(h) => h,
         None if ctx.preview => {
-            return Ok(super::ai_placeholder(&format!("Horoscope · {name}"), i18n::t("L'horoscope", "The horoscope")));
+            return Ok(super::ai_placeholder(&format!("Horoscope · {name}"), i18n::t("L'horoscope", "The horoscope", "Het horoscoop")));
         }
         None => {
             let claude = ctx.claude.as_ref().context(crate::claude::missing())?;
@@ -179,7 +179,7 @@ pub fn build(ctx: &Ctx, sign: &str, tone: Tone) -> Result<Doc> {
                 h if h.is_complete() => h,
                 _ => generate(claude, date, name, tone)?,
             };
-            anyhow::ensure!(h.is_complete(), i18n::t("réponse de Claude incomplète", "incomplete answer from Claude"));
+            anyhow::ensure!(h.is_complete(), i18n::t("réponse de Claude incomplète", "incomplete answer from Claude", "onvolledig antwoord van Claude"));
             if let Some(cache) = cache {
                 cache.put(&key, &h);
             }
@@ -194,9 +194,9 @@ pub fn build(ctx: &Ctx, sign: &str, tone: Tone) -> Result<Doc> {
     doc.feed(1);
     doc.text(&h.general, Style::default());
     let sections = [
-        (i18n::t("Amour", "Love"), &h.amour),
-        (i18n::t("Activités", "Activities"), &h.activites),
-        (i18n::t("Forme", "Health"), &h.forme),
+        (i18n::t("Amour", "Love", "Liefde"), &h.amour),
+        (i18n::t("Activités", "Activities", "Activiteiten"), &h.activites),
+        (i18n::t("Forme", "Health", "Gezondheid"), &h.forme),
     ];
     for (label, text) in sections {
         doc.feed(1);
@@ -204,7 +204,7 @@ pub fn build(ctx: &Ctx, sign: &str, tone: Tone) -> Result<Doc> {
         doc.text(text, Style::default());
     }
     doc.feed(1);
-    doc.hanging(i18n::t("Porte-bonheur : ", "Lucky charm: "), &h.porte_bonheur, Style::default().bold());
+    doc.hanging(i18n::t("Porte-bonheur : ", "Lucky charm: ", "Gelukbrenger: "), &h.porte_bonheur, Style::default().bold());
     Ok(doc)
 }
 

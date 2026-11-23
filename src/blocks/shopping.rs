@@ -11,7 +11,7 @@ fn render(title: &str, items: &[ShoppingItem]) -> Doc {
     doc.header(title);
     if items.is_empty() {
         doc.text(
-            crate::i18n::t("La liste est vide : rien à acheter !", "The list is empty: nothing to buy!"),
+            crate::i18n::t("La liste est vide : rien à acheter !", "The list is empty: nothing to buy!", "De lijst is leeg: niets te kopen!"),
             Style::default().small().center(),
         );
         return doc;
@@ -29,9 +29,9 @@ fn render(title: &str, items: &[ShoppingItem]) -> Doc {
     let count = items.len();
     let who = people.join(", ");
     let line = if count > 1 {
-        tr!("{count} articles, ajoutés par {who}", "{count} items, added by {who}")
+        tr!("{count} articles, ajoutés par {who}", "{count} items, added by {who}", "{count} items, toegevoegd door {who}")
     } else {
-        tr!("{count} article, ajouté par {who}", "{count} item, added by {who}")
+        tr!("{count} article, ajouté par {who}", "{count} item, added by {who}", "{count} item, toegevoegd door {who}")
     };
     doc.text(&line, Style::default().small().center());
     doc
@@ -39,7 +39,7 @@ fn render(title: &str, items: &[ShoppingItem]) -> Doc {
 
 pub fn build(title: Option<&str>) -> Result<Doc> {
     let items = store::read_data()?.shopping;
-    Ok(render(title.unwrap_or(crate::i18n::t("Liste de courses", "Shopping list")), &items))
+    Ok(render(title.unwrap_or(crate::i18n::t("Liste de courses", "Shopping list", "Boodschappenlijst")), &items))
 }
 
 #[cfg(test)]

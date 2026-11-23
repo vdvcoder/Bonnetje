@@ -104,33 +104,33 @@ pub fn build(coupon: &Coupon, today: NaiveDate) -> Doc {
         doc.image(frieze());
         doc.feed(1);
         // `line` et non `text` : les espaces entre les lettres sont gardés tels quels.
-        doc.line(i18n::t("B O N   P O U R", "C O U P O N   F O R"), Style::default().bold().center().size(2));
+        doc.line(i18n::t("B O N   P O U R", "C O U P O N   F O R", "B O N   V O O R"), Style::default().bold().center().size(2));
         doc.feed(1);
         doc.text(text.trim(), Style::default().bold().center().size(2));
         doc.feed(1);
         let people = match (coupon.from, coupon.to) {
-            (Some(from), Some(to)) => Some(tr!("Offert par {from} à {to}", "Given by {from} to {to}")),
-            (Some(from), None) => Some(tr!("Offert par {from}", "Given by {from}")),
-            (None, Some(to)) => Some(tr!("Pour {to}", "For {to}")),
+            (Some(from), Some(to)) => Some(tr!("Offert par {from} à {to}", "Given by {from} to {to}", "Gegeven door {from} aan {to}")),
+            (Some(from), None) => Some(tr!("Offert par {from}", "Given by {from}", "Gegeven door {from}")),
+            (None, Some(to)) => Some(tr!("Pour {to}", "For {to}", "Voor {to}")),
             (None, None) => None,
         };
         if let Some(people) = people {
             doc.text(&people, Style::default().center());
         }
         let validity = match coupon.valid_until {
-            Some(date) => tr!("Valable jusqu'au {} {}", "Valid until {}, {}", i18n::day_month(date), date.format("%Y")),
-            None => i18n::t("Valable pour toujours (ou presque)", "Valid forever (or almost)").to_owned(),
+            Some(date) => tr!("Valable jusqu'au {} {}", "Valid until {}, {}", "Geldig tot {}, {}", i18n::day_month(date), date.format("%Y")),
+            None => i18n::t("Valable pour toujours (ou presque)", "Valid forever (or almost)", "Altijd geldig (of bijna)").to_owned(),
         };
         doc.text(&validity, Style::default().center());
         doc.feed(1);
         doc.text(
             i18n::t(
                 "Non remboursable, non échangeable, à utiliser sans modération.",
-                "Non-refundable, non-exchangeable, use without moderation.",
+                "Non-refundable, non-exchangeable, use without moderation.", "Niet terugbetaalbaar, niet ruilbaar, gebruik zonder mate.",
             ),
             Style::default().small().center(),
         );
-        doc.text(&tr!("Bon n° {}", "Coupon No. {}", serial(today, &mut rng)), Style::default().small().center());
+        doc.text(&tr!("Bon n° {}", "Coupon No. {}", "Bon nr. {}", serial(today, &mut rng)), Style::default().small().center());
         doc.feed(1);
         doc.image(frieze());
         doc.feed(1);

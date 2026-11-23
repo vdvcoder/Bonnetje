@@ -26,11 +26,11 @@ pub enum Shape {
 impl Shape {
     pub fn label(self) -> &'static str {
         match self {
-            Shape::Heart => crate::i18n::t("cœur", "heart"),
-            Shape::Star => crate::i18n::t("étoile", "star"),
-            Shape::Sun => crate::i18n::t("soleil", "sun"),
-            Shape::Flower => crate::i18n::t("fleur", "flower"),
-            Shape::Smile => crate::i18n::t("sourire", "smile"),
+            Shape::Heart => crate::i18n::t("cœur", "heart", "hart"),
+            Shape::Star => crate::i18n::t("étoile", "star", "ster"),
+            Shape::Sun => crate::i18n::t("soleil", "sun", "zon"),
+            Shape::Flower => crate::i18n::t("fleur", "flower", "bloem"),
+            Shape::Smile => crate::i18n::t("sourire", "smile", "glimlach"),
         }
     }
 

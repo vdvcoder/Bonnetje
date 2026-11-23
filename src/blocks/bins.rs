@@ -101,7 +101,7 @@ pub fn build(collections: &[Collection], when: When, always: bool, today: NaiveD
     anyhow::ensure!(
         !collections.is_empty(),
         "{}",
-        i18n::t("indiquer au moins un ramassage", "give at least one collection")
+        i18n::t("indiquer au moins un ramassage", "give at least one collection", "geef minstens één ophaling op")
     );
     let day = if when == When::Veille { today + Duration::days(1) } else { today };
     let due: Vec<&Collection> = collections.iter().filter(|c| c.collects_on(day)).collect();
@@ -110,9 +110,9 @@ pub fn build(collections: &[Collection], when: When, always: bool, today: NaiveD
     if due.is_empty() {
         if always {
             let nothing = if when == When::Veille {
-                i18n::t("Pas de poubelle à sortir ce soir.", "No bins to put out tonight.")
+                i18n::t("Pas de poubelle à sortir ce soir.", "No bins to put out tonight.", "Geen bakken buiten te zetten vanavond.")
             } else {
-                i18n::t("Pas de ramassage aujourd'hui.", "No collection today.")
+                i18n::t("Pas de ramassage aujourd'hui.", "No collection today.", "Vandaag geen ophaling.")
             };
             doc.text(nothing, Style::default().small().center());
             // Le prochain ramassage, dans les quatre semaines.
@@ -125,7 +125,7 @@ pub fn build(collections: &[Collection], when: When, always: bool, today: NaiveD
                 let date = if when == When::Veille { date - Duration::days(1) } else { date };
                 let text = tr!(
                     "Prochain : {names}, {} {}",
-                    "Next: {names}, {} {}",
+                    "Next: {names}, {} {}", "Volgende: {names}, {} {}",
                     i18n::weekday(date),
                     i18n::day_month(date)
                 );
@@ -137,9 +137,9 @@ pub fn build(collections: &[Collection], when: When, always: bool, today: NaiveD
     doc.image(bin_icon());
     doc.feed(1);
     let intro = if when == When::Veille {
-        i18n::t("Ce soir, on sort :", "Tonight, put out:")
+        i18n::t("Ce soir, on sort :", "Tonight, put out:", "Zet vanavond buiten:")
     } else {
-        i18n::t("Aujourd'hui, ramassage :", "Today, collection:")
+        i18n::t("Aujourd'hui, ramassage :", "Today, collection:", "Vandaag ophaling:")
     };
     doc.text(intro, Style::default().center());
     for c in due {

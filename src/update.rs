@@ -170,29 +170,29 @@ pub fn auto_installs() -> bool {
 /// Ligne de la bannière de démarrage.
 pub fn summary() -> String {
     let Some(s) = settings() else {
-        return format!("{} (PRINTR_UPDATE_CHECK)", t("vérification désactivée", "update check disabled"));
+        return format!("{} (PRINTR_UPDATE_CHECK)", t("vérification désactivée", "update check disabled", "updatecontrole uitgeschakeld"));
     };
     let every = match s.interval.as_secs() {
-        86_400 => t("chaque jour", "daily").to_owned(),
-        n if n % 60 == 0 => tr!("toutes les {} min", "every {} min", n / 60),
-        n => tr!("toutes les {n} s", "every {n} s"),
+        86_400 => t("chaque jour", "daily", "dagelijks").to_owned(),
+        n if n % 60 == 0 => tr!("toutes les {} min", "every {} min", "om de {} min", n / 60),
+        n => tr!("toutes les {n} s", "every {n} s", "om de {n} s"),
     };
     match (s.mode, s.keys.first()) {
         (Mode::Notify, _) => tr!(
             "vérification {every} sur GitHub, rien n'est installé tout seul",
-            "checking {every} on GitHub, nothing is installed automatically"
+            "checking {every} on GitHub, nothing is installed automatically", "controle {every} op GitHub, er wordt niets automatisch geïnstalleerd"
         ),
         (Mode::Auto, None) => tr!(
             "vérification {every} ; installation automatique demandée, mais sans clé de signature rien ne s'installe",
-            "checking {every}; automatic install requested, but without a signing key nothing is installed"
+            "checking {every}; automatic install requested, but without a signing key nothing is installed", "controle {every}; automatische installatie gevraagd, maar zonder ondertekeningssleutel wordt niets geïnstalleerd"
         ),
         (Mode::Auto, Some(_)) => {
-            let when = s.window.map_or(t("à toute heure", "at any time").to_owned(), |(a, b)| {
-                tr!("entre {} et {}", "between {} and {}", a.format("%H:%M"), b.format("%H:%M"))
+            let when = s.window.map_or(t("à toute heure", "at any time", "op elk moment").to_owned(), |(a, b)| {
+                tr!("entre {} et {}", "between {} and {}", "tussen {} en {}", a.format("%H:%M"), b.format("%H:%M"))
             });
             tr!(
                 "vérification {every}, installation automatique signée, {when}",
-                "checking {every}, signed automatic install, {when}"
+                "checking {every}, signed automatic install, {when}", "controle {every}, ondertekende automatische installatie, {when}"
             )
         }
     }
@@ -228,24 +228,24 @@ fn get(http: &ureq::Agent, url: &str, limit: u64) -> Result<Vec<u8>> {
         .header("Accept", "application/vnd.github+json")
         .header("User-Agent", concat!("printr/", env!("CARGO_PKG_VERSION")))
         .call()
-        .with_context(|| tr!("{url} injoignable", "{url} unreachable"))?;
+        .with_context(|| tr!("{url} injoignable", "{url} unreachable", "{url} onbereikbaar"))?;
     Ok(response.body_mut().with_config().limit(limit).read_to_vec()?)
 }
 
 fn latest_tags(http: &ureq::Agent, s: &Settings) -> Result<Option<Available>> {
     let tags: Vec<Tag> = serde_json::from_slice(&get(http, &format!("{}/tags?per_page=100", s.base), 1 << 20)?)
-        .context(t("réponse du dépôt illisible", "repository response unreadable"))?;
+        .context(t("réponse du dépôt illisible", "repository response unreadable", "antwoord van de repository onleesbaar"))?;
     let names: Vec<String> = tags.into_iter().map(|t| t.name).collect();
     Ok(newer(&names, env!("CARGO_PKG_VERSION")))
 }
 
 fn latest_release(http: &ureq::Agent, s: &Settings) -> Result<Release> {
     let release: Release = serde_json::from_slice(&get(http, &format!("{}/releases/latest", s.base), 1 << 20)?)
-        .context(t("release illisible", "release unreadable"))?;
+        .context(t("release illisible", "release unreadable", "release onleesbaar"))?;
     ensure!(
         !release.draft && !release.prerelease,
         "{}",
-        t("la dernière release est un brouillon ou une préversion", "the latest release is a draft or a prerelease")
+        t("la dernière release est un brouillon ou une préversion", "the latest release is a draft or a prerelease", "de nieuwste release is een concept of een pre-release")
     );
     Ok(release)
 }
@@ -259,7 +259,7 @@ fn asset_name() -> String {
 }
 
 fn state_dir() -> Result<PathBuf> {
-    crate::store::data_dir().context(t("dossier de données introuvable", "data directory not found"))
+    crate::store::data_dir().context(t("dossier de données introuvable", "data directory not found", "gegevensmap niet gevonden"))
 }
 
 fn refused(state: &Path) -> Vec<String> {
@@ -276,11 +276,11 @@ fn expected_hash(sums: &str, name: &str) -> Option<String> {
 
 fn verify_signature(key: &str, data: &[u8], signature: &str) -> Result<()> {
     let key = minisign_verify::PublicKey::from_base64(key.trim())
-        .map_err(|e| anyhow::anyhow!("{}", tr!("clé publique invalide : {e}", "invalid public key: {e}")))?;
+        .map_err(|e| anyhow::anyhow!("{}", tr!("clé publique invalide : {e}", "invalid public key: {e}", "ongeldige publieke sleutel: {e}")))?;
     let signature = minisign_verify::Signature::decode(signature)
-        .map_err(|e| anyhow::anyhow!("{}", tr!("signature illisible : {e}", "unreadable signature: {e}")))?;
+        .map_err(|e| anyhow::anyhow!("{}", tr!("signature illisible : {e}", "unreadable signature: {e}", "onleesbare handtekening: {e}")))?;
     key.verify(data, &signature, false)
-        .map_err(|e| anyhow::anyhow!("{}", tr!("signature refusée : {e}", "signature refused: {e}")))
+        .map_err(|e| anyhow::anyhow!("{}", tr!("signature refusée : {e}", "signature refused: {e}", "handtekening geweigerd: {e}")))
 }
 
 /// Une signature de l'une des clés (la principale, ou celle de secours).
@@ -292,7 +292,7 @@ fn verify_any(keys: &[String], data: &[u8], signature: &str) -> Result<()> {
             Err(e) => refused = Some(e),
         }
     }
-    Err(refused.unwrap_or_else(|| anyhow::anyhow!("{}", t("aucune clé de signature", "no signing key"))))
+    Err(refused.unwrap_or_else(|| anyhow::anyhow!("{}", t("aucune clé de signature", "no signing key", "geen ondertekeningssleutel"))))
 }
 
 /// Nouveau programme vérifié, prêt à remplacer l'actuel.
@@ -306,7 +306,7 @@ pub struct Prepared {
 
 fn prepare(http: &ureq::Agent, s: &Settings, release: &Release) -> Result<Option<Prepared>> {
     let Some(version) = parse(&release.tag_name) else {
-        bail!("{}", tr!("étiquette de release illisible : {}", "unreadable release tag: {}", release.tag_name))
+        bail!("{}", tr!("étiquette de release illisible : {}", "unreadable release tag: {}", "onleesbare releasetag: {}", release.tag_name))
     };
     if version <= current() {
         return Ok(None);
@@ -319,21 +319,21 @@ fn prepare(http: &ureq::Agent, s: &Settings, release: &Release) -> Result<Option
     ensure!(
         !s.keys.is_empty(),
         "{}",
-        t("aucune clé de signature : installation impossible", "no signing key: cannot install")
+        t("aucune clé de signature : installation impossible", "no signing key: cannot install", "geen ondertekeningssleutel: installeren niet mogelijk")
     );
     let asset = |name: &str| {
         release
             .assets
             .iter()
             .find(|a| a.name == name)
-            .with_context(|| tr!("release {to} sans fichier {name}", "release {to} has no {name} file"))
+            .with_context(|| tr!("release {to} sans fichier {name}", "release {to} has no {name} file", "release {to} heeft geen bestand {name}"))
     };
     let binary_name = asset_name();
     let sums = get(http, &asset("SHA256SUMS")?.browser_download_url, 64 * 1024)?;
     let signature = get(http, &asset("SHA256SUMS.minisig")?.browser_download_url, 8 * 1024)?;
     verify_any(&s.keys, &sums, &String::from_utf8_lossy(&signature))?;
     let expected = expected_hash(&String::from_utf8_lossy(&sums), &binary_name)
-        .with_context(|| tr!("{binary_name} absent de SHA256SUMS", "{binary_name} missing from SHA256SUMS"))?;
+        .with_context(|| tr!("{binary_name} absent de SHA256SUMS", "{binary_name} missing from SHA256SUMS", "{binary_name} ontbreekt in SHA256SUMS"))?;
     let binary = get(http, &asset(&binary_name)?.browser_download_url, MAX_BINARY)?;
     let actual: String = Sha256::digest(&binary).iter().map(|b| format!("{b:02x}")).collect();
     ensure!(
@@ -341,13 +341,13 @@ fn prepare(http: &ureq::Agent, s: &Settings, release: &Release) -> Result<Option
         "{}",
         tr!(
             "empreinte de {binary_name} incorrecte : fichier corrompu ou modifié",
-            "wrong checksum for {binary_name}: corrupted or altered file"
+            "wrong checksum for {binary_name}: corrupted or altered file", "verkeerde checksum voor {binary_name}: beschadigd of aangepast bestand"
         )
     );
 
-    let exe = std::env::current_exe().context(t("emplacement du programme inconnu", "program location unknown"))?;
+    let exe = std::env::current_exe().context(t("emplacement du programme inconnu", "program location unknown", "locatie van het programma onbekend"))?;
     let new = exe.with_file_name("printr.new");
-    fs::write(&new, &binary).with_context(|| tr!("impossible d'écrire {}", "cannot write {}", new.display()))?;
+    fs::write(&new, &binary).with_context(|| tr!("impossible d'écrire {}", "cannot write {}", "kan {} niet schrijven", new.display()))?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -357,7 +357,7 @@ fn prepare(http: &ureq::Agent, s: &Settings, release: &Release) -> Result<Option
     let output = Command::new(&new)
         .arg("--version")
         .output()
-        .context(t("le nouveau programme ne se lance pas", "the new program does not start"))?;
+        .context(t("le nouveau programme ne se lance pas", "the new program does not start", "het nieuwe programma start niet"))?;
     let announced = String::from_utf8_lossy(&output.stdout).trim().to_owned();
     if announced_version(&announced) != Some(to.as_str()) {
         let _ = fs::remove_file(&new);
@@ -365,7 +365,7 @@ fn prepare(http: &ureq::Agent, s: &Settings, release: &Release) -> Result<Option
             "{}",
             tr!(
                 "le nouveau programme annonce « {announced} » au lieu de printr {to}",
-                "the new program says “{announced}” instead of printr {to}"
+                "the new program says “{announced}” instead of printr {to}", "het nieuwe programma meldt “{announced}” in plaats van printr {to}"
             )
         );
     }
@@ -386,11 +386,11 @@ impl Prepared {
         // changerait ses permissions, ce qui est refusé à qui n'en est pas propriétaire (EPERM). On
         // l'enlève donc d'abord, ce que permet le dossier, ouvert en écriture au groupe printr.
         let _ = fs::remove_file(&old);
-        fs::copy(&self.exe, &old).with_context(|| tr!("impossible de garder {}", "cannot keep {}", old.display()))?;
+        fs::copy(&self.exe, &old).with_context(|| tr!("impossible de garder {}", "cannot keep {}", "kan {} niet bewaren", old.display()))?;
         fs::write(self.state.join(PENDING), format!("from={}\nto={}\n", self.from, self.to))?;
         let _ = fs::remove_file(self.state.join(format!("{PENDING}.starts")));
         fs::rename(&self.new, &self.exe)
-            .with_context(|| tr!("impossible de remplacer {}", "cannot replace {}", self.exe.display()))?;
+            .with_context(|| tr!("impossible de remplacer {}", "cannot replace {}", "kan {} niet vervangen", self.exe.display()))?;
         Ok(())
     }
 }
@@ -411,7 +411,7 @@ pub fn spawn(latest: Arc<Mutex<Option<Available>>>, host: Arc<dyn Host>) {
         loop {
             if let Err(e) = round(&http, &s, &latest, host.as_ref()) {
                 // Hors ligne, dépôt en panne, release refusée : on réessaiera à la prochaine échéance.
-                eprintln!("{}", tr!("mise à jour : {e:#}", "update: {e:#}"));
+                eprintln!("{}", tr!("mise à jour : {e:#}", "update: {e:#}", "update: {e:#}"));
             }
             std::thread::sleep(s.interval);
         }
@@ -437,7 +437,7 @@ fn round(http: &ureq::Agent, s: &Settings, latest: &Mutex<Option<Available>>, ho
             "{}",
             tr!(
                 "mise à jour : printr {} vérifiée (signature et empreinte), installation",
-                "update: printr {} verified (signature and checksum), installing",
+                "update: printr {} verified (signature and checksum), installing", "update: printr {} gecontroleerd (handtekening en checksum), installeren",
                 prepared.to
             )
         );
@@ -453,7 +453,7 @@ fn publish(latest: &Mutex<Option<Available>>, found: Option<Available>) {
             "{}",
             tr!(
                 "nouvelle version disponible : printr {} ({})",
-                "new version available: printr {} ({})",
+                "new version available: printr {} ({})", "nieuwe versie beschikbaar: printr {} ({})",
                 new.version,
                 new.url
             )
@@ -493,7 +493,7 @@ pub fn confirm_pending(listen: &str) {
                 let _ = fs::write(state.join(LAST), format!("{from} {to} {}\n", Local::now().format("%Y-%m-%dT%H:%M")));
                 eprintln!(
                     "{}",
-                    tr!("mise à jour confirmée : printr {from} → {to}", "update confirmed: printr {from} → {to}")
+                    tr!("mise à jour confirmée : printr {from} → {to}", "update confirmed: printr {from} → {to}", "update bevestigd: printr {from} → {to}")
                 );
                 return;
             }
@@ -503,7 +503,7 @@ pub fn confirm_pending(listen: &str) {
             "{}",
             tr!(
                 "printr {to} ne répond pas : arrêt, l'ancienne version {from} sera remise en place",
-                "printr {to} does not answer: stopping, the previous version {from} will be put back"
+                "printr {to} does not answer: stopping, the previous version {from} will be put back", "printr {to} reageert niet: gestopt, de vorige versie {from} wordt teruggezet"
             )
         );
         std::process::exit(1);

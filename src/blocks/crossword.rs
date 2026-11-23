@@ -45,9 +45,9 @@ impl Size {
 
     pub fn label(self) -> &'static str {
         match self {
-            Size::Small => crate::i18n::t("petite", "small"),
-            Size::Medium => crate::i18n::t("moyenne", "medium"),
-            Size::Large => crate::i18n::t("grande", "large"),
+            Size::Small => crate::i18n::t("petite", "small", "klein"),
+            Size::Medium => crate::i18n::t("moyenne", "medium", "middelgroot"),
+            Size::Large => crate::i18n::t("grande", "large", "groot"),
         }
     }
 }
@@ -105,7 +105,7 @@ fn generate(lang: Language, side: usize, level: u8, seed: u64) -> Result<Saved> 
     options.seed = seed;
     options.score_weight = settings.score_weight;
     let (solution, _) = crosswords::generate(&dict, &options)
-        .map_err(|e| anyhow!("{}", tr!("grille impossible : {e}", "could not build the grid: {e}")))?;
+        .map_err(|e| anyhow!("{}", tr!("grille impossible : {e}", "could not build the grid: {e}", "kon het rooster niet opbouwen: {e}")))?;
     let grid = &solution.grid;
     let rows = (0..grid.height())
         .map(|r| {
@@ -140,7 +140,7 @@ fn complete(lang: Language, saved: &mut Saved, level: u8) -> Result<()> {
         return Ok(());
     }
     let report = autodefs::generate_for(lang, &missing, &known_definitions(lang), level, |_| {}).map_err(|e| {
-        anyhow!("{}", tr!("définitions par Claude impossibles : {e}", "Claude could not write the clues: {e}"))
+        anyhow!("{}", tr!("définitions par Claude impossibles : {e}", "Claude could not write the clues: {e}", "Claude kon de omschrijvingen niet schrijven: {e}"))
     })?;
     remember(lang, &report.definitions, level, &report.model)?;
     let written: HashMap<&str, &str> = report.definitions.iter().map(|(w, d)| (w.as_str(), d.as_str())).collect();
@@ -226,7 +226,7 @@ fn render(g: &Saved, solution: bool, lang: Language) -> GrayImage {
 fn clue(w: &Word) -> String {
     match &w.clue {
         Some(c) => c.clone(),
-        None => tr!("({} lettres)", "({} letters)", w.word.len()),
+        None => tr!("({} lettres)", "({} letters)", "({} letters)", w.word.len()),
     }
 }
 
@@ -293,7 +293,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
         if let Err(e) = complete(lang, &mut grid, level) {
             note = Some(tr!(
                 "Définitions indisponibles ({e}) : la longueur est indiquée.",
-                "Clues unavailable ({e}): the word length is shown."
+                "Clues unavailable ({e}): the word length is shown.", "Omschrijvingen niet beschikbaar ({e}): de woordlengte wordt getoond."
             ));
         }
         grid.claude_tried = true;
@@ -303,7 +303,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
         let n = grid.missing().len();
         note = Some(tr!(
             "{n} définition(s) n'ont pas pu être rédigées : la longueur est indiquée.",
-            "{n} clue(s) could not be written: the word length is shown."
+            "{n} clue(s) could not be written: the word length is shown.", "{n} omschrijving(en) kon(den) niet geschreven worden: de woordlengte wordt getoond."
         ));
     }
     if let Some(cache) = cache
@@ -315,9 +315,9 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
     let mut doc = Doc::new();
     doc.from_cache = from_cache && grid.missing().is_empty();
     if options.solution {
-        doc.header(crate::i18n::t("Solution des mots croisés", "Crossword solution"));
+        doc.header(crate::i18n::t("Solution des mots croisés", "Crossword solution", "Oplossing kruiswoordraadsel"));
     } else {
-        doc.header(&tr!("Mots croisés · {}", "Crossword · {}", level_label(level)));
+        doc.header(&tr!("Mots croisés · {}", "Crossword · {}", "Kruiswoordraadsel · {}", level_label(level)));
     }
     doc.feed(1);
     doc.image(render(&grid, options.solution, lang));
@@ -332,7 +332,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
             doc.text(
                 crate::i18n::t(
                     "Les définitions manquantes seront rédigées par Claude à l'impression.",
-                    "Missing clues will be written by Claude when printing.",
+                    "Missing clues will be written by Claude when printing.", "Ontbrekende omschrijvingen worden bij het afdrukken door Claude geschreven.",
                 ),
                 Style::default().small().center(),
             );
@@ -343,7 +343,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
         doc.text(&note, Style::default().small().center());
     }
     doc.text(
-        &tr!("n° {seed} · grille {} · niveau {level}", "No. {seed} · {} grid · level {level}", options.size.label()),
+        &tr!("n° {seed} · grille {} · niveau {level}", "No. {seed} · {} grid · level {level}", "Nr. {seed} · {} rooster · niveau {level}", options.size.label()),
         Style::default().small().align(Align::Right),
     );
     Ok(doc)

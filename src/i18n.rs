@@ -1,8 +1,8 @@
 //! Langue de l'installation : `PRINTR_LANG=en` passe l'interface, les messages et les tickets en
-//! anglais ; le français reste la langue par défaut.
+//! anglais, `PRINTR_LANG=nl` en néerlandais (Bonnetje) ; le français reste la langue par défaut.
 //!
 //! Les traductions sont écrites à côté du texte français, là où il sert :
-//! `t("Bonjour", "Hello")` pour une chaîne fixe, `tr!("{n} blocs", "{n} blocks")` pour une chaîne
+//! `t("Bonjour", "Hello", "Hallo")` pour une chaîne fixe, `tr!("{n} blocs", "{n} blocks", "{n} blokken")` pour une chaîne
 //! formatée. Pas de catalogue à part : une phrase et sa traduction ne peuvent pas se perdre de vue.
 
 use std::cell::Cell;
@@ -14,6 +14,7 @@ use chrono::{Datelike, NaiveDate};
 pub enum Lang {
     Fr,
     En,
+    Nl,
 }
 
 impl Lang {
@@ -21,6 +22,7 @@ impl Lang {
         match value.trim().to_ascii_lowercase().get(..2)? {
             "fr" => Some(Lang::Fr),
             "en" => Some(Lang::En),
+            "nl" => Some(Lang::Nl),
             _ => None,
         }
     }
@@ -30,6 +32,7 @@ impl Lang {
         match self {
             Lang::Fr => "fr",
             Lang::En => "en",
+            Lang::Nl => "nl",
         }
     }
 }
@@ -61,6 +64,10 @@ pub fn en() -> bool {
     lang() == Lang::En
 }
 
+pub fn nl() -> bool {
+    lang() == Lang::Nl
+}
+
 /// Exécute `f` dans la langue donnée, sur ce fil seulement.
 pub fn with_lang<T>(lang: Lang, f: impl FnOnce() -> T) -> T {
     let before = FORCED.replace(Some(lang));
@@ -70,18 +77,30 @@ pub fn with_lang<T>(lang: Lang, f: impl FnOnce() -> T) -> T {
 }
 
 /// La chaîne de la langue en vigueur.
-pub fn t(fr: &'static str, en: &'static str) -> &'static str {
-    if self::en() { en } else { fr }
+pub fn t(fr: &'static str, en: &'static str, nl: &'static str) -> &'static str {
+    match lang() {
+        Lang::Fr => fr,
+        Lang::En => en,
+        Lang::Nl => nl,
+    }
 }
 
-/// `format!` dans la langue en vigueur : `tr!("{n} blocs", "{n} blocks")`.
+/// `format!` dans la langue en vigueur : `tr!("{n} blocs", "{n} blocks", "{n} blokken")`.
 #[macro_export]
 macro_rules! tr {
-    ($fr:literal, $en:literal $(,)?) => {
-        if $crate::i18n::en() { format!($en) } else { format!($fr) }
+    ($fr:literal, $en:literal, $nl:literal $(,)?) => {
+        match $crate::i18n::lang() {
+            $crate::i18n::Lang::Fr => format!($fr),
+            $crate::i18n::Lang::En => format!($en),
+            $crate::i18n::Lang::Nl => format!($nl),
+        }
     };
-    ($fr:literal, $en:literal, $($arg:tt)+) => {
-        if $crate::i18n::en() { format!($en, $($arg)+) } else { format!($fr, $($arg)+) }
+    ($fr:literal, $en:literal, $nl:literal, $($arg:tt)+) => {
+        match $crate::i18n::lang() {
+            $crate::i18n::Lang::Fr => format!($fr, $($arg)+),
+            $crate::i18n::Lang::En => format!($en, $($arg)+),
+            $crate::i18n::Lang::Nl => format!($nl, $($arg)+),
+        }
     };
 }
 
@@ -91,6 +110,13 @@ const DAYS: [&str; 7] = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "sam
 const MONTHS: [&str; 12] = [
     "janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre",
     "novembre", "décembre",
+];
+#[rustfmt::skip]
+const DAYS_NL: [&str; 7] = ["maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag", "zondag"];
+#[rustfmt::skip]
+const MONTHS_NL: [&str; 12] = [
+    "januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober",
+    "november", "december",
 ];
 #[rustfmt::skip]
 const DAYS_EN: [&str; 7] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -103,18 +129,22 @@ const MONTHS_EN: [&str; 12] = [
 /// « mercredi », « Wednesday ».
 pub fn weekday(date: NaiveDate) -> &'static str {
     let i = date.weekday().num_days_from_monday() as usize;
-    t(DAYS[i], DAYS_EN[i])
+    t(DAYS[i], DAYS_EN[i], DAYS_NL[i])
 }
 
 /// « mer. », « Wed ».
 pub fn weekday_short(date: NaiveDate) -> String {
     let day = weekday(date);
-    if en() { day[..3].to_owned() } else { format!("{}.", &day[..3]) }
+    match lang() {
+        Lang::En => day[..3].to_owned(),
+        Lang::Nl => day[..2].to_owned(),
+        Lang::Fr => format!("{}.", &day[..3]),
+    }
 }
 
 /// « octobre », « October ».
 pub fn month(month0: u32) -> &'static str {
-    t(MONTHS[month0 as usize], MONTHS_EN[month0 as usize])
+    t(MONTHS[month0 as usize], MONTHS_EN[month0 as usize], MONTHS_NL[month0 as usize])
 }
 
 pub fn capitalize(s: &str) -> String {
@@ -128,10 +158,10 @@ pub fn capitalize(s: &str) -> String {
 /// « 1er octobre », « 7 octobre » ; « October 1 », « October 7 ».
 pub fn day_month(date: NaiveDate) -> String {
     let name = month(date.month0());
-    match (en(), date.day()) {
-        (true, d) => format!("{name} {d}"),
-        (false, 1) => format!("1er {name}"),
-        (false, d) => format!("{d} {name}"),
+    match (lang(), date.day()) {
+        (Lang::En, d) => format!("{name} {d}"),
+        (Lang::Fr, 1) => format!("1er {name}"),
+        (_, d) => format!("{d} {name}"),
     }
 }
 
@@ -160,7 +190,12 @@ mod tests {
         with_lang(Lang::En, || {
             assert_eq!(long_date(d), "Wednesday, October 7, 2026");
             assert_eq!(weekday_short(d), "Wed");
-            assert_eq!(tr!("{} blocs", "{} blocks", 3), "3 blocks");
+        });
+        with_lang(Lang::Nl, || {
+            assert_eq!(long_date(d), "woensdag 7 oktober 2026");
+            assert_eq!(weekday_short(d), "wo");
+            assert_eq!(day_month(NaiveDate::from_ymd_opt(2026, 8, 1).unwrap()), "1 augustus");
+            assert_eq!(tr!("{} blocs", "{} blocks", "{} blokken", 3), "3 blocks");
         });
     }
 
@@ -168,6 +203,7 @@ mod tests {
     fn parses_locales() {
         assert_eq!(Lang::parse("en_US.UTF-8"), Some(Lang::En));
         assert_eq!(Lang::parse("FR"), Some(Lang::Fr));
+        assert_eq!(Lang::parse("nl_BE.UTF-8"), Some(Lang::Nl));
         assert_eq!(Lang::parse("de"), None);
     }
 }

@@ -203,10 +203,10 @@ fn fetch(agent: &ureq::Agent, url: &str, index: usize) -> Result<Vec<Article>> {
         .get(url)
         .header("User-Agent", "printr/0.1 (personal receipt printer)")
         .call()
-        .with_context(|| tr!("flux injoignable : {url}", "feed unreachable: {url}"))?;
+        .with_context(|| tr!("flux injoignable : {url}", "feed unreachable: {url}", "feed onbereikbaar: {url}"))?;
     let bytes = response.body_mut().with_config().limit(10 * 1024 * 1024).read_to_vec()?;
     let feed = feed_rs::parser::parse(bytes.as_slice())
-        .with_context(|| tr!("flux illisible : {url}", "unreadable feed: {url}"))?;
+        .with_context(|| tr!("flux illisible : {url}", "unreadable feed: {url}", "onleesbare feed: {url}"))?;
     let source = host(feed.links.first().map_or(url, |l| l.href.as_str()));
     let feed_len = feed.entries.len();
     Ok(feed
@@ -233,7 +233,7 @@ fn fetch(agent: &ureq::Agent, url: &str, index: usize) -> Result<Vec<Article>> {
 
 pub fn build(ctx: &Ctx, title: &str, feeds: &[String], options: &Options) -> Result<Doc> {
     if feeds.is_empty() {
-        bail!("{}", t("aucun flux RSS", "no RSS feed"));
+        bail!("{}", t("aucun flux RSS", "no RSS feed", "geen RSS-feed"));
     }
     // Les flux sont téléchargés en parallèle ; un flux en panne n'empêche pas les autres.
     let results: Vec<Result<Vec<Article>>> = std::thread::scope(|s| {
@@ -241,7 +241,7 @@ pub fn build(ctx: &Ctx, title: &str, feeds: &[String], options: &Options) -> Res
             feeds.iter().enumerate().map(|(i, url)| s.spawn(move || fetch(&ctx.http, url, i))).collect();
         handles
             .into_iter()
-            .map(|h| h.join().unwrap_or_else(|_| bail!("{}", t("erreur interne", "internal error"))))
+            .map(|h| h.join().unwrap_or_else(|_| bail!("{}", t("erreur interne", "internal error", "interne fout"))))
             .collect()
     });
     let mut articles = Vec::new();
@@ -253,16 +253,16 @@ pub fn build(ctx: &Ctx, title: &str, feeds: &[String], options: &Options) -> Res
         }
     }
     if articles.is_empty() {
-        bail!("{}", if errors.is_empty() { t("aucun article", "no articles").to_owned() } else { errors.join(" ; ") });
+        bail!("{}", if errors.is_empty() { t("aucun article", "no articles", "geen artikels").to_owned() } else { errors.join(" ; ") });
     }
 
     let chosen = select(articles, options, Utc::now());
     if chosen.is_empty() {
-        bail!("{}", t("aucun article récent ne correspond", "no recent article matches"));
+        bail!("{}", t("aucun article récent ne correspond", "no recent article matches", "geen recent artikel komt overeen"));
     }
 
     let mut doc = Doc::new();
-    doc.header(&tr!("Actualités · {title}", "News · {title}"));
+    doc.header(&tr!("Actualités · {title}", "News · {title}", "Nieuws · {title}"));
     let qr = options.qr.min(2).min(chosen.len());
     for (i, article) in chosen.iter().enumerate() {
         doc.feed(1);
@@ -288,7 +288,7 @@ pub fn build(ctx: &Ctx, title: &str, feeds: &[String], options: &Options) -> Res
         doc.line(&caption, style);
     }
     if !errors.is_empty() {
-        doc.text(&tr!("({} flux en panne)", "({} feeds down)", errors.len()), Style::default().small().center());
+        doc.text(&tr!("({} flux en panne)", "({} feeds down)", "({} feeds offline)", errors.len()), Style::default().small().center());
     }
     Ok(doc)
 }

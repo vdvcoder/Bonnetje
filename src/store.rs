@@ -58,7 +58,7 @@ fn queue_file(id: &str) -> Option<PathBuf> {
 
 /// Garde les octets d'un ticket qui attend l'imprimante.
 pub fn save_job(id: &str, bytes: &[u8]) -> Result<()> {
-    let path = queue_file(id).context(t("répertoire de données introuvable", "data directory not found"))?;
+    let path = queue_file(id).context(t("répertoire de données introuvable", "data directory not found", "gegevensmap niet gevonden"))?;
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir)?;
     }
@@ -337,7 +337,7 @@ pub struct QueuedJob {
 pub fn read_data() -> Result<Data> {
     let dir = data_dir().context(t(
         "répertoire de données introuvable (définir PRINTR_DATA_DIR)",
-        "data directory not found (set PRINTR_DATA_DIR)",
+        "data directory not found (set PRINTR_DATA_DIR)", "gegevensmap niet gevonden (stel PRINTR_DATA_DIR in)",
     ))?;
     Ok(Store::open_at(&dir.join("printr.json"))?.data)
 }
@@ -365,12 +365,12 @@ impl Store {
     pub fn open() -> Result<Self> {
         let dir = data_dir().context(t(
             "répertoire de données introuvable (définir PRINTR_DATA_DIR)",
-            "data directory not found (set PRINTR_DATA_DIR)",
+            "data directory not found (set PRINTR_DATA_DIR)", "gegevensmap niet gevonden (stel PRINTR_DATA_DIR in)",
         ))?;
         let images = dir.join("images");
         if !images.is_dir() {
             fs::create_dir_all(&images)
-                .with_context(|| tr!("impossible de créer {}", "cannot create {}", images.display()))?;
+                .with_context(|| tr!("impossible de créer {}", "cannot create {}", "kan {} niet aanmaken", images.display()))?;
             #[cfg(unix)]
             share_with_group(&images, 0o2770);
         }
@@ -380,10 +380,10 @@ impl Store {
     pub fn open_at(path: &Path) -> Result<Self> {
         let data = match fs::read_to_string(path) {
             Ok(text) => {
-                serde_json::from_str(&text).with_context(|| tr!("{} illisible", "{} is unreadable", path.display()))?
+                serde_json::from_str(&text).with_context(|| tr!("{} illisible", "{} is unreadable", "{} is onleesbaar", path.display()))?
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Data::default(),
-            Err(e) => return Err(e).with_context(|| tr!("impossible de lire {}", "cannot read {}", path.display())),
+            Err(e) => return Err(e).with_context(|| tr!("impossible de lire {}", "cannot read {}", "kan {} niet lezen", path.display())),
         };
         Ok(Self { path: path.to_owned(), data, modified: modified(path) })
     }
@@ -454,10 +454,10 @@ impl Store {
     pub fn add_user(&mut self, name: &str, password: &str) -> Result<String> {
         let name = name.trim();
         if name.is_empty() {
-            bail!("{}", t("le prénom est vide", "the name is empty"));
+            bail!("{}", t("le prénom est vide", "the name is empty", "de naam is leeg"));
         }
         if self.find_by_name(name).is_some() {
-            bail!("{}", tr!("{name} existe déjà", "{name} already exists"));
+            bail!("{}", tr!("{name} existe déjà", "{name} already exists", "{name} bestaat al"));
         }
         let color = COLORS[self.data.users.len() % COLORS.len()].to_owned();
         let password_hash = hash(password)?;
@@ -486,7 +486,7 @@ impl Store {
     pub fn set_password(&mut self, name: &str, password: &str) -> Result<()> {
         let hash = hash(password)?;
         let user = self.data.users.iter_mut().find(|u| u.name.eq_ignore_ascii_case(name.trim()));
-        let user = user.with_context(|| tr!("utilisateur inconnu : {name}", "unknown user: {name}"))?;
+        let user = user.with_context(|| tr!("utilisateur inconnu : {name}", "unknown user: {name}", "onbekende gebruiker: {name}"))?;
         user.password_hash = hash;
         let id = user.id.clone();
         self.data.sessions.retain(|s| s.user_id != id);
@@ -497,7 +497,7 @@ impl Store {
         let id = self
             .find_by_name(name)
             .map(|u| u.id.clone())
-            .with_context(|| tr!("utilisateur inconnu : {name}", "unknown user: {name}"))?;
+            .with_context(|| tr!("utilisateur inconnu : {name}", "unknown user: {name}", "onbekende gebruiker: {name}"))?;
         self.remove_user_id(&id);
         Ok(())
     }
@@ -562,14 +562,14 @@ fn hash(password: &str) -> Result<String> {
             "{}",
             tr!(
                 "mot de passe trop court ({MIN_PASSWORD} caractères minimum)",
-                "password too short (at least {MIN_PASSWORD} characters)"
+                "password too short (at least {MIN_PASSWORD} characters)", "wachtwoord te kort (minstens {MIN_PASSWORD} tekens)"
             )
         );
     }
     Argon2::default()
         .hash_password(password.as_bytes())
         .map(|h| h.to_string())
-        .map_err(|e| anyhow::anyhow!("{}", tr!("hachage impossible : {e}", "hashing failed: {e}")))
+        .map_err(|e| anyhow::anyhow!("{}", tr!("hachage impossible : {e}", "hashing failed: {e}", "hashen mislukt: {e}")))
 }
 
 impl Schedule {

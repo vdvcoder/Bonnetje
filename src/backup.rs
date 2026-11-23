@@ -81,18 +81,18 @@ type Image = (String, Vec<u8>);
 /// Lit et vérifie un fichier de sauvegarde, sans rien toucher.
 fn parse(bytes: &[u8]) -> Result<(Data, Vec<Image>)> {
     let backup: Backup = serde_json::from_slice(bytes).map_err(|_| {
-        anyhow::anyhow!("{}", t("ce fichier n'est pas une sauvegarde de Printr", "this file is not a Printr backup"))
+        anyhow::anyhow!("{}", t("ce fichier n'est pas une sauvegarde de Printr", "this file is not a Printr backup", "dit bestand is geen Bonnetje-back-up"))
     })?;
     if backup.printr_backup != FORMAT {
         bail!(
             "{}",
-            t("sauvegarde d'un format inconnu (Printr plus récent ?)", "backup in an unknown format (newer Printr?)")
+            t("sauvegarde d'un format inconnu (Printr plus récent ?)", "backup in an unknown format (newer Printr?)", "back-up in een onbekend formaat (nieuwere Bonnetje?)")
         );
     }
     let data: Data = serde_json::from_value(backup.data)
-        .map_err(|e| anyhow::anyhow!("{}", tr!("sauvegarde illisible : {e}", "unreadable backup: {e}")))?;
+        .map_err(|e| anyhow::anyhow!("{}", tr!("sauvegarde illisible : {e}", "unreadable backup: {e}", "onleesbare back-up: {e}")))?;
     if data.users_count() == 0 {
-        bail!("{}", t("la sauvegarde ne contient aucun compte", "the backup has no account"));
+        bail!("{}", t("la sauvegarde ne contient aucun compte", "the backup has no account", "de back-up bevat geen account"));
     }
     // Les réglages, vérifiés comme s'ils étaient saisis dans l'appli (chemin de l'imprimante, etc.).
     for (key, value) in &data.settings {
@@ -101,13 +101,13 @@ fn parse(bytes: &[u8]) -> Result<(Data, Vec<Image>)> {
     let mut images = Vec::new();
     for (name, content) in backup.images {
         if !image_name_ok(&name) {
-            bail!("{}", tr!("photo au nom invalide : {name}", "photo with an invalid name: {name}"));
+            bail!("{}", tr!("photo au nom invalide : {name}", "photo with an invalid name: {name}", "foto met een ongeldige naam: {name}"));
         }
         let bytes = STANDARD
             .decode(content.as_bytes())
-            .map_err(|_| anyhow::anyhow!("{}", tr!("photo illisible : {name}", "unreadable photo: {name}")))?;
+            .map_err(|_| anyhow::anyhow!("{}", tr!("photo illisible : {name}", "unreadable photo: {name}", "onleesbare foto: {name}")))?;
         if !bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
-            bail!("{}", tr!("photo illisible : {name}", "unreadable photo: {name}"));
+            bail!("{}", tr!("photo illisible : {name}", "unreadable photo: {name}", "onleesbare foto: {name}"));
         }
         images.push((name, bytes));
     }

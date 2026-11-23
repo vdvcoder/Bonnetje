@@ -55,19 +55,19 @@ impl Size {
 
     pub fn label(self) -> &'static str {
         match self {
-            Size::Small => crate::i18n::t("petite", "small"),
-            Size::Medium => crate::i18n::t("moyenne", "medium"),
-            Size::Large => crate::i18n::t("grande", "large"),
+            Size::Small => crate::i18n::t("petite", "small", "klein"),
+            Size::Medium => crate::i18n::t("moyenne", "medium", "middelgroot"),
+            Size::Large => crate::i18n::t("grande", "large", "groot"),
         }
     }
 }
 
 pub fn level_label(level: u8) -> &'static str {
     match level {
-        1 => crate::i18n::t("facile", "easy"),
-        2 => crate::i18n::t("moyen", "medium"),
-        3 => crate::i18n::t("difficile", "hard"),
-        _ => crate::i18n::t("très difficile", "very hard"),
+        1 => crate::i18n::t("facile", "easy", "makkelijk"),
+        2 => crate::i18n::t("moyen", "medium", "middelgroot"),
+        3 => crate::i18n::t("difficile", "hard", "moeilijk"),
+        _ => crate::i18n::t("très difficile", "very hard", "zeer moeilijk"),
     }
 }
 
@@ -168,7 +168,7 @@ pub(super) fn dictionary(lang: Language, min_score: u32) -> Result<Arc<Dictionar
     }
     let path = wordlist::for_language(lang, |_| {}).context(crate::i18n::t(
         "liste de mots de CrossWords indisponible (premier téléchargement)",
-        "CrossWords word list unavailable (first download)",
+        "CrossWords word list unavailable (first download)", "CrossWords-woordenlijst niet beschikbaar (eerste download)",
     ))?;
     let file = File::open(&path).with_context(|| format!("{} illisible", path.display()))?;
     let dict = Arc::new(Dictionary::from_reader(BufReader::new(file), min_score)?);
@@ -212,7 +212,7 @@ fn generate(lang: Language, width: usize, height: usize, level: u8, seed: u64) -
     let mut options = FlechesOptions::new(width, height).with_level(level);
     options.seed = seed;
     let (fleches, _) = generate_fleches(&dict, &options)
-        .map_err(|e| anyhow!("{}", tr!("grille impossible : {e}", "could not build the grid: {e}")))?;
+        .map_err(|e| anyhow!("{}", tr!("grille impossible : {e}", "could not build the grid: {e}", "kon het rooster niet opbouwen: {e}")))?;
     let defs = known_definitions(lang).at_level(level);
     parse(&fleches.to_json_in(Some(&defs), Some(seed), Some(level), lang))
 }
@@ -225,7 +225,7 @@ fn complete(lang: Language, grille: &mut Grille, level: u8) -> Result<usize> {
         return Ok(0);
     }
     let report = autodefs::generate_for(lang, &missing, &known_definitions(lang), level, |_| {}).map_err(|e| {
-        anyhow!("{}", tr!("définitions par Claude impossibles : {e}", "Claude could not write the clues: {e}"))
+        anyhow!("{}", tr!("définitions par Claude impossibles : {e}", "Claude could not write the clues: {e}", "Claude kon de omschrijvingen niet schrijven: {e}"))
     })?;
     remember(lang, &report.definitions, level, &report.model)?;
     let written: HashMap<&str, &str> = report.definitions.iter().map(|(w, d)| (w.as_str(), d.as_str())).collect();
@@ -382,7 +382,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
             Err(e) => {
                 note = Some(tr!(
                     "Définitions indisponibles ({e}) : la longueur est indiquée.",
-                    "Clues unavailable ({e}): the word length is shown."
+                    "Clues unavailable ({e}): the word length is shown.", "Omschrijvingen niet beschikbaar ({e}): de woordlengte wordt getoond."
                 ))
             }
         }
@@ -392,7 +392,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
         let n = grille.missing().len();
         note = Some(tr!(
             "{n} définition(s) n'ont pas pu être rédigées : la longueur est indiquée.",
-            "{n} clue(s) could not be written: the word length is shown."
+            "{n} clue(s) could not be written: the word length is shown.", "{n} omschrijving(en) kon(den) niet geschreven worden: de woordlengte wordt getoond."
         ));
     }
     if let Some(cache) = cache
@@ -404,13 +404,13 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
     let mut doc = Doc::new();
     doc.from_cache = from_cache && grille.missing().is_empty();
     if options.solution {
-        doc.header(crate::i18n::t("Solution des mots fléchés", "Arrow words solution"));
+        doc.header(crate::i18n::t("Solution des mots fléchés", "Arrow words solution", "Oplossing pijlwoordenraadsel"));
     } else {
-        doc.header(&tr!("Mots fléchés · {}", "Arrow words · {}", level_label(level)));
+        doc.header(&tr!("Mots fléchés · {}", "Arrow words · {}", "Pijlwoorden · {}", level_label(level)));
         doc.text(
             crate::i18n::t(
                 "Chaque numéro renvoie à sa définition ; la flèche montre où part le mot.",
-                "Each number points to its clue; the arrow shows where the word starts.",
+                "Each number points to its clue; the arrow shows where the word starts.", "Elk nummer verwijst naar zijn omschrijving; de pijl toont waar het woord begint.",
             ),
             Style::default().small().center(),
         );
@@ -425,7 +425,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
         for d in defs {
             let text = match &d.texte {
                 Some(t) => t.clone(),
-                None => tr!("({} lettres)", "({} letters)", grille.mots[d.mot].longueur),
+                None => tr!("({} lettres)", "({} letters)", "({} letters)", grille.mots[d.mot].longueur),
             };
             doc.hanging(&format!("{:>width$}. ", d.numero), &text, Style::default());
         }
@@ -434,7 +434,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
             doc.text(
                 crate::i18n::t(
                     "Les définitions manquantes seront rédigées par Claude à l'impression.",
-                    "Missing clues will be written by Claude when printing.",
+                    "Missing clues will be written by Claude when printing.", "Ontbrekende omschrijvingen worden bij het afdrukken door Claude geschreven.",
                 ),
                 Style::default().small().center(),
             );
@@ -445,7 +445,7 @@ pub fn build(ctx: &Ctx, options: &Options) -> Result<Doc> {
         }
     }
     doc.text(
-        &tr!("n° {seed} · grille {} · niveau {level}", "No. {seed} · {} grid · level {level}", options.size.label()),
+        &tr!("n° {seed} · grille {} · niveau {level}", "No. {seed} · {} grid · level {level}", "Nr. {seed} · {} rooster · niveau {level}", options.size.label()),
         Style::default().small().align(Align::Right),
     );
     Ok(doc)

@@ -204,7 +204,7 @@ fn system_fortune() -> Result<String> {
     let program = FORTUNE_PATHS.iter().find(|p| std::path::Path::new(p).is_file()).with_context(|| {
         i18n::t(
             "commande fortune introuvable (paquet fortune-mod : sudo apt install fortune-mod)",
-            "fortune command not found (fortune-mod package: sudo apt install fortune-mod)",
+            "fortune command not found (fortune-mod package: sudo apt install fortune-mod)", "opdracht fortune niet gevonden (pakket fortune-mod: sudo apt install fortune-mod)",
         )
     })?;
     let mut child = Command::new(program)
@@ -214,7 +214,7 @@ fn system_fortune() -> Result<String> {
         .stderr(Stdio::null())
         .env_clear()
         .spawn()
-        .with_context(|| tr!("impossible de lancer {program}", "cannot run {program}"))?;
+        .with_context(|| tr!("impossible de lancer {program}", "cannot run {program}", "kan {program} niet starten"))?;
     let started = std::time::Instant::now();
     let status = loop {
         if let Some(status) = child.try_wait()? {
@@ -223,7 +223,7 @@ fn system_fortune() -> Result<String> {
         if started.elapsed() > FORTUNE_TIMEOUT {
             let _ = child.kill();
             let _ = child.wait();
-            bail!("{}", i18n::t("la commande fortune ne répond pas", "the fortune command does not answer"));
+            bail!("{}", i18n::t("la commande fortune ne répond pas", "the fortune command does not answer", "de opdracht fortune antwoordt niet"));
         }
         std::thread::sleep(std::time::Duration::from_millis(20));
     };
@@ -233,7 +233,7 @@ fn system_fortune() -> Result<String> {
     }
     let text: String = out.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(FORTUNE_MAX).collect();
     if !status.success() || text.is_empty() {
-        bail!("{}", i18n::t("la commande fortune n'a rien donné", "the fortune command gave nothing"));
+        bail!("{}", i18n::t("la commande fortune n'a rien donné", "the fortune command gave nothing", "de opdracht fortune gaf niets terug"));
     }
     Ok(text)
 }
@@ -257,7 +257,7 @@ pub fn build(source: Source, cow: bool, seed: Option<u64>) -> Result<Doc> {
         doc.text(&text, Style::default().bold().center());
     }
     if let Some(n) = number {
-        doc.text(&tr!("n° {n}", "No. {n}"), Style::default().small().align(Align::Right));
+        doc.text(&tr!("n° {n}", "No. {n}", "Nr. {n}"), Style::default().small().align(Align::Right));
     }
     Ok(doc)
 }

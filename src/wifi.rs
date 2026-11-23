@@ -210,7 +210,7 @@ fn hotspot_password() -> String {
     if let Some(file) = file {
         let _ = std::fs::create_dir_all(file.parent().unwrap_or(&file));
         if let Err(e) = std::fs::write(&file, &password) {
-            eprintln!("{}", tr!("mot de passe du point d'accès non gardé : {e}", "hotspot password not kept: {e}"));
+            eprintln!("{}", tr!("mot de passe du point d'accès non gardé : {e}", "hotspot password not kept: {e}", "wachtwoord van de hotspot niet bewaard: {e}"));
         }
     }
     password
@@ -241,7 +241,7 @@ fn hostapd_conf(ifname: &str, ssid: &str, password: &str) -> String {
 fn open_hotspot(ifname: &str, ssid: &str, password: &str) -> Result<()> {
     // Nom et mot de passe viennent de Printr, mais une ligne de trop changerait la configuration.
     if [ifname, ssid, password].iter().any(|v| v.chars().any(char::is_control)) {
-        bail!("{}", t("nom ou mot de passe invalide", "invalid name or password"));
+        bail!("{}", t("nom ou mot de passe invalide", "invalid name or password", "ongeldige naam of wachtwoord"));
     }
     std::fs::write(HOSTAPD_CONF, hostapd_conf(ifname, ssid, password))?;
     let _ = nmcli(&["radio", "wifi", "on"]);
@@ -256,7 +256,7 @@ fn open_hotspot(ifname: &str, ssid: &str, password: &str) -> Result<()> {
             "{}",
             t(
                 "hostapd n'a pas démarré (journalctl -u printr-hotspot)",
-                "hostapd did not start (journalctl -u printr-hotspot)"
+                "hostapd did not start (journalctl -u printr-hotspot)", "hostapd is niet gestart (journalctl -u printr-hotspot)"
             )
         );
     }
@@ -291,7 +291,7 @@ fn hotspot_failed_ticket(error: &str) -> Doc {
     doc.text(
         t(
             "Pas de réseau, et impossible d'ouvrir le Wi-Fi de configuration.",
-            "No network, and the setup Wi-Fi could not be opened.",
+            "No network, and the setup Wi-Fi could not be opened.", "Geen netwerk, en de wifi voor de configuratie kon niet geopend worden.",
         ),
         Style::default().bold(),
     );
@@ -301,7 +301,7 @@ fn hotspot_failed_ticket(error: &str) -> Doc {
     doc.text(
         t(
             "Branche Printr en Ethernet pour continuer, puis ouvre http://printr.local",
-            "Plug Printr into Ethernet to carry on, then open http://printr.local",
+            "Plug Printr into Ethernet to carry on, then open http://printr.local", "Sluit Bonnetje aan op Ethernet om verder te gaan en open dan http://printr.local",
         ),
         Style::default(),
     );
@@ -311,11 +311,11 @@ fn hotspot_failed_ticket(error: &str) -> Doc {
 /// Un nom de réseau et un mot de passe acceptables (WPA : 8 à 63 caractères, ou rien si ouvert).
 pub fn check(ssid: &str, password: &str) -> Result<()> {
     if ssid.is_empty() || ssid.len() > 32 || ssid.starts_with('-') || ssid.chars().any(char::is_control) {
-        bail!("{}", t("nom de réseau invalide", "invalid network name"));
+        bail!("{}", t("nom de réseau invalide", "invalid network name", "ongeldige netwerknaam"));
     }
     let n = password.chars().count();
     if !(password.is_empty() || (8..=63).contains(&n)) || password.chars().any(char::is_control) {
-        bail!("{}", t("le mot de passe Wi-Fi fait de 8 à 63 caractères", "the Wi-Fi password is 8 to 63 characters"));
+        bail!("{}", t("le mot de passe Wi-Fi fait de 8 à 63 caractères", "the Wi-Fi password is 8 to 63 characters", "het wifi-wachtwoord is 8 tot 63 tekens lang"));
     }
     Ok(())
 }
@@ -347,18 +347,18 @@ fn hotspot_ticket(ssid: &str, password: &str, port: u16, error: Option<&str>) ->
         doc.text(error, Style::default().center().bold());
         doc.feed(1);
     } else {
-        doc.text(t("Bienvenue !", "Welcome!"), Style::default().center());
+        doc.text(t("Bienvenue !", "Welcome!", "Welkom!"), Style::default().center());
         doc.feed(1);
     }
     doc.text(
-        t("1. Connecte ton téléphone à ce Wi-Fi :", "1. Connect your phone to this Wi-Fi:"),
+        t("1. Connecte ton téléphone à ce Wi-Fi :", "1. Connect your phone to this Wi-Fi:", "1. Verbind je telefoon met deze wifi:"),
         Style::default().bold(),
     );
     doc.qr(&wifi_qr(ssid, password), 6);
-    doc.text(&format!("{}{ssid}", t("Réseau : ", "Network: ")), Style::default().center());
-    doc.text(&format!("{}{password}", t("Mot de passe : ", "Password: ")), Style::default().center());
+    doc.text(&format!("{}{ssid}", t("Réseau : ", "Network: ", "Netwerk: ")), Style::default().center());
+    doc.text(&format!("{}{password}", t("Mot de passe : ", "Password: ", "Wachtwoord: ")), Style::default().center());
     doc.feed(1);
-    doc.text(t("2. Puis ouvre cette page :", "2. Then open this page:"), Style::default().bold());
+    doc.text(t("2. Puis ouvre cette page :", "2. Then open this page:", "2. Open dan deze pagina:"), Style::default().bold());
     let url = app_url(HOTSPOT_ADDRESS, port);
     doc.qr(&url, 6);
     doc.text(&url, Style::default().center());
@@ -369,12 +369,12 @@ fn hotspot_ticket(ssid: &str, password: &str, port: u16, error: Option<&str>) ->
 fn joined_ticket(ssid: &str, urls: &[String]) -> Doc {
     let mut doc = Doc::new();
     doc.text("Printr", Style::default().bold().center().size(2));
-    doc.text(&tr!("Connecté à « {ssid} » !", "Connected to “{ssid}”!"), Style::default().center());
+    doc.text(&tr!("Connecté à « {ssid} » !", "Connected to “{ssid}”!", "Verbonden met “{ssid}”!"), Style::default().center());
     doc.feed(1);
     doc.text(
         t(
             "Reconnecte ton téléphone au Wi-Fi de la maison, puis ouvre Printr :",
-            "Put your phone back on the home Wi-Fi, then open Printr:",
+            "Put your phone back on the home Wi-Fi, then open Printr:", "Zet je telefoon terug op de wifi thuis en open dan Bonnetje:",
         ),
         Style::default(),
     );
@@ -395,13 +395,13 @@ fn print_soon(app: &App, doc: &Doc) {
             Err(_) => std::thread::sleep(Duration::from_secs(5)),
         }
     }
-    eprintln!("{}", t("ticket de configuration Wi-Fi non imprimé", "Wi-Fi setup ticket not printed"));
+    eprintln!("{}", t("ticket de configuration Wi-Fi non imprimé", "Wi-Fi setup ticket not printed", "wifi-configuratiebonnetje niet afgedrukt"));
 }
 
 /// Connecté : le point d'accès disparaît, et un ticket donne l'adresse de l'appli.
 fn joined(app: &App, port: u16, ssid: &str) {
     *state() = State::Off;
-    eprintln!("{}", tr!("connecté à « {ssid} »", "connected to “{ssid}”"));
+    eprintln!("{}", tr!("connecté à « {ssid} »", "connected to “{ssid}”", "verbonden met “{ssid}”"));
     // Le temps d'obtenir une adresse.
     let mut ip = None;
     for _ in 0..20 {
@@ -445,7 +445,7 @@ fn retry_known(app: &App, port: u16, ifname: &str, known: &[String]) {
         }
         // Toujours rien : le point d'accès revient, avec le même nom et le même mot de passe.
         if let Err(e) = open_hotspot(ifname, &ssid, &password) {
-            eprintln!("{}", tr!("point d'accès impossible : {e}", "cannot open the hotspot: {e}"));
+            eprintln!("{}", tr!("point d'accès impossible : {e}", "cannot open the hotspot: {e}", "kan de hotspot niet openen: {e}"));
         }
     }
 }
@@ -464,7 +464,7 @@ pub fn spawn(app: Arc<App>, port: u16) {
             "{}",
             tr!(
                 "première connexion au réseau : attente du réseau ({} s)",
-                "first network connection: waiting for the network ({} s)",
+                "first network connection: waiting for the network ({} s)", "eerste netwerkverbinding: wachten op het netwerk ({} s)",
                 wait.as_secs()
             )
         );
@@ -474,13 +474,13 @@ pub fn spawn(app: Arc<App>, port: u16) {
                 Ok((Some(ifname), false)) if start.elapsed() >= wait => break ifname,
                 Ok((None, false)) if start.elapsed() >= wait => {
                     let why =
-                        t("pas de réseau, et pas de Wi-Fi pour le configurer", "no network, and no Wi-Fi to set it up");
+                        t("pas de réseau, et pas de Wi-Fi pour le configurer", "no network, and no Wi-Fi to set it up", "geen netwerk, en geen wifi om het in te stellen");
                     eprintln!("{why}");
                     print_soon(&app, &hotspot_failed_ticket(why));
                     return;
                 }
                 Err(e) if start.elapsed() >= wait => {
-                    let why = tr!("NetworkManager injoignable : {e}", "NetworkManager unreachable: {e}");
+                    let why = tr!("NetworkManager injoignable : {e}", "NetworkManager unreachable: {e}", "NetworkManager onbereikbaar: {e}");
                     eprintln!("{why}");
                     print_soon(&app, &hotspot_failed_ticket(&why));
                     return;
@@ -496,21 +496,21 @@ pub fn spawn(app: Arc<App>, port: u16) {
             "{}",
             tr!(
                 "pas de réseau : {} Wi-Fi à portée, ouverture du point d'accès sur {ifname}",
-                "no network: {} Wi-Fi networks in range, opening the hotspot on {ifname}",
+                "no network: {} Wi-Fi networks in range, opening the hotspot on {ifname}", "geen netwerk: {} wifi-netwerken in de buurt, hotspot openen op {ifname}",
                 networks.len()
             )
         );
         if let Err(e) = open_hotspot(&ifname, &ssid, &password) {
-            eprintln!("{}", tr!("point d'accès impossible : {e}", "cannot open the hotspot: {e}"));
+            eprintln!("{}", tr!("point d'accès impossible : {e}", "cannot open the hotspot: {e}", "kan de hotspot niet openen: {e}"));
             print_soon(&app, &hotspot_failed_ticket(&format!("{e:#}")));
             return;
         }
-        eprintln!("{}", tr!("point d'accès « {ssid} » ouvert", "hotspot “{ssid}” open"));
+        eprintln!("{}", tr!("point d'accès « {ssid} » ouvert", "hotspot “{ssid}” open", "hotspot “{ssid}” open"));
         // Un Wi-Fi connu mais introuvable : on le dit, et on le retente en arrière-plan.
         let error = known.first().map(|name| {
             tr!(
                 "Printr ne trouve pas le Wi-Fi « {name} ». Il réessaie toutes les 5 minutes ; pour en choisir un autre :",
-                "Printr can't find the “{name}” Wi-Fi. It tries again every 5 minutes; to pick another one:"
+                "Printr can't find the “{name}” Wi-Fi. It tries again every 5 minutes; to pick another one:", "Bonnetje vindt de wifi “{name}” niet. Het probeert elke 5 minuten opnieuw; om een andere te kiezen:"
             )
         });
         *state() = State::Hotspot { ssid: ssid.clone(), password: password.clone(), networks, error: error.clone() };
@@ -525,11 +525,11 @@ pub fn spawn(app: Arc<App>, port: u16) {
 pub fn join(wanted: String, key: String) -> Result<()> {
     check(&wanted, &key)?;
     let Some((app, port)) = SERVER.get().cloned() else {
-        bail!("{}", t("pas de configuration Wi-Fi en cours", "no Wi-Fi setup in progress"))
+        bail!("{}", t("pas de configuration Wi-Fi en cours", "no Wi-Fi setup in progress", "geen Wi-Fi-configuratie bezig"))
     };
     let (ssid, password, networks) = match &*state() {
         State::Hotspot { ssid, password, networks, .. } => (ssid.clone(), password.clone(), networks.clone()),
-        _ => bail!("{}", t("pas de configuration Wi-Fi en cours", "no Wi-Fi setup in progress")),
+        _ => bail!("{}", t("pas de configuration Wi-Fi en cours", "no Wi-Fi setup in progress", "geen Wi-Fi-configuratie bezig")),
     };
     *state() = State::Joining { ssid: wanted.clone() };
     std::thread::spawn(move || {
@@ -544,15 +544,15 @@ pub fn join(wanted: String, key: String) -> Result<()> {
         match nmcli(&args) {
             Ok(_) => joined(&app, port, &wanted),
             Err(e) => {
-                eprintln!("{}", tr!("connexion à « {wanted} » impossible : {e}", "cannot connect to “{wanted}”: {e}"));
+                eprintln!("{}", tr!("connexion à « {wanted} » impossible : {e}", "cannot connect to “{wanted}”: {e}", "kan niet verbinden met “{wanted}”: {e}"));
                 // NetworkManager garde un profil pour ce réseau : on l'enlève, pour réessayer proprement.
                 let _ = nmcli(&["connection", "delete", "id", wanted.as_str()]);
                 let error = tr!(
                     "Impossible de rejoindre « {wanted} ». Vérifie le mot de passe et réessaie.",
-                    "Could not join “{wanted}”. Check the password and try again."
+                    "Could not join “{wanted}”. Check the password and try again.", "Kon niet verbinden met “{wanted}”. Controleer het wachtwoord en probeer opnieuw."
                 );
                 if let Err(e) = open_hotspot(&ifname, &ssid, &password) {
-                    eprintln!("{}", tr!("point d'accès impossible : {e}", "cannot open the hotspot: {e}"));
+                    eprintln!("{}", tr!("point d'accès impossible : {e}", "cannot open the hotspot: {e}", "kan de hotspot niet openen: {e}"));
                 }
                 *state() = State::Hotspot {
                     ssid: ssid.clone(),

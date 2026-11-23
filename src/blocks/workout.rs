@@ -28,18 +28,18 @@ pub enum Level {
 impl Level {
     pub fn label(self) -> &'static str {
         match self {
-            Level::Easy => t("facile", "easy"),
-            Level::Medium => t("moyen", "medium"),
-            Level::Hard => t("difficile", "hard"),
+            Level::Easy => t("facile", "easy", "makkelijk"),
+            Level::Medium => t("moyen", "medium", "middelgroot"),
+            Level::Hard => t("difficile", "hard", "moeilijk"),
         }
     }
 
     fn tagline(self) -> &'static str {
         match self {
-            Level::Easy => t("Tout le monde peut le faire.", "Anyone can do this."),
-            Level::Medium => t("Là, on commence à causer.", "Now we're talking."),
+            Level::Easy => t("Tout le monde peut le faire.", "Anyone can do this.", "Dat kan iedereen."),
+            Level::Medium => t("Là, on commence à causer.", "Now we're talking.", "Nu begint het ergens op te lijken."),
             Level::Hard => {
-                t("Ça rigole plus : réservé aux vrais déglingos.", "No more laughing: reserved for the total maniacs.")
+                t("Ça rigole plus : réservé aux vrais déglingos.", "No more laughing: reserved for the total maniacs.", "Gedaan met lachen: enkel voor de echte gekken.")
             }
         }
     }
@@ -242,22 +242,22 @@ pub fn build(today: NaiveDate, level: Level, number: Option<usize>) -> Result<Do
     let index = match number {
         Some(n) if (1..=list.len()).contains(&n) => n - 1,
         Some(n) => {
-            let msg = tr!("défi n° {n} inconnu (1 à {})", "challenge No. {n} not found (1 to {})", list.len());
+            let msg = tr!("défi n° {n} inconnu (1 à {})", "challenge No. {n} not found (1 to {})", "uitdaging nr. {n} niet gevonden (1 tot {})", list.len());
             bail!("{}", msg)
         }
         None => of_day(today, level),
     };
 
     let mut doc = Doc::new();
-    doc.header(&tr!("Défi sportif · {}", "Workout challenge · {}", level.label()));
+    doc.header(&tr!("Défi sportif · {}", "Workout challenge · {}", "Sportuitdaging · {}", level.label()));
     doc.text(level.tagline(), Style::default().small().center());
     doc.feed(1);
     doc.text(list[index], Style::default().bold());
-    doc.text(&tr!("n° {}", "No. {}", index + 1), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {}", "No. {}", "Nr. {}", index + 1), Style::default().small().align(Align::Right));
     doc.feed(1);
-    doc.text(t("[ ] Fait !", "[ ] Done!"), Style::default().size(2));
+    doc.text(t("[ ] Fait !", "[ ] Done!", "[ ] Klaar!"), Style::default().size(2));
     doc.text(
-        t("Écoute ton corps : adapte ou arrête en cas de douleur.", "Listen to your body: adapt or stop if it hurts."),
+        t("Écoute ton corps : adapte ou arrête en cas de douleur.", "Listen to your body: adapt or stop if it hurts.", "Luister naar je lichaam: pas aan of stop bij pijn."),
         Style::default().small().center(),
     );
     Ok(doc)

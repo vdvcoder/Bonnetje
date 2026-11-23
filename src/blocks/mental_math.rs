@@ -26,10 +26,10 @@ pub enum Level {
 impl Level {
     pub fn label(self) -> &'static str {
         match self {
-            Level::Beginner => crate::i18n::t("débutant", "beginner"),
-            Level::Easy => crate::i18n::t("facile", "easy"),
-            Level::Medium => crate::i18n::t("moyen", "medium"),
-            Level::Hard => crate::i18n::t("difficile", "hard"),
+            Level::Beginner => crate::i18n::t("débutant", "beginner", "beginner"),
+            Level::Easy => crate::i18n::t("facile", "easy", "makkelijk"),
+            Level::Medium => crate::i18n::t("moyen", "medium", "middelgroot"),
+            Level::Hard => crate::i18n::t("difficile", "hard", "moeilijk"),
         }
     }
 }
@@ -242,7 +242,7 @@ fn classic(level: Level, rng: &mut StdRng) -> Option<Problem> {
 }
 
 fn title(level: Level) -> String {
-    tr!("Calcul mental · {}", "Mental math · {}", level.label())
+    tr!("Calcul mental · {}", "Mental math · {}", "Hoofdrekenen · {}", level.label())
 }
 
 pub fn build(level: Level, choice: &Choice, count: u8, seed: Option<u64>) -> Doc {
@@ -272,13 +272,13 @@ pub fn build(level: Level, choice: &Choice, count: u8, seed: Option<u64>) -> Doc
         doc.line(&format!("{left:<21}{right}"), Style::default());
         doc.feed(1);
     }
-    let score = tr!("Score : ...... / {count}", "Score: ...... / {count}");
+    let score = tr!("Score : ...... / {count}", "Score: ...... / {count}", "Score: ...... / {count}");
     doc.line(&format!("{score:>42}"), Style::default().bold());
-    doc.text(&tr!("n° {seed}", "No. {seed}"), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {seed}", "No. {seed}", "Nr. {seed}"), Style::default().small().align(Align::Right));
     doc.feed(1);
     let answers: Vec<String> = problems.iter().enumerate().map(|(i, p)| format!("{}) {}", i + 1, p.answer)).collect();
     let answers = answers.join("  ");
-    doc.text(&tr!("Réponses : {answers}", "Answers: {answers}"), Style::default().small().upside_down());
+    doc.text(&tr!("Réponses : {answers}", "Answers: {answers}", "Antwoorden: {answers}"), Style::default().small().upside_down());
     doc
 }
 

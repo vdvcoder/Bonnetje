@@ -48,8 +48,8 @@ pub fn build(ctx: &Ctx) -> Result<Doc> {
         Some(w) => w,
         None if ctx.preview => {
             return Ok(super::ai_placeholder(
-                i18n::t("Mot du jour", "Word of the day"),
-                i18n::t("Le mot du jour", "The word of the day"),
+                i18n::t("Mot du jour", "Word of the day", "Woord van de dag"),
+                i18n::t("Le mot du jour", "The word of the day", "Het woord van de dag"),
             ));
         }
         None => {
@@ -60,7 +60,7 @@ pub fn build(ctx: &Ctx) -> Result<Doc> {
                 w if w.is_complete() => w,
                 _ => generate(claude, date, &past)?,
             };
-            anyhow::ensure!(w.is_complete(), i18n::t("réponse de Claude incomplète", "incomplete answer from Claude"));
+            anyhow::ensure!(w.is_complete(), i18n::t("réponse de Claude incomplète", "incomplete answer from Claude", "onvolledig antwoord van Claude"));
             if let Some(cache) = cache {
                 cache.put(&key, &w);
                 cache.remember(history, &w.mot, HISTORY);
@@ -71,7 +71,7 @@ pub fn build(ctx: &Ctx) -> Result<Doc> {
 
     let mut doc = Doc::new();
     doc.from_cache = from_cache;
-    doc.header(i18n::t("Mot du jour", "Word of the day"));
+    doc.header(i18n::t("Mot du jour", "Word of the day", "Woord van de dag"));
     doc.feed(1);
     // En double taille si le mot tient sur une ligne.
     let big = Style::default().bold().center().size(2);
@@ -82,9 +82,9 @@ pub fn build(ctx: &Ctx) -> Result<Doc> {
     doc.text(&w.definition, Style::default());
     doc.feed(1);
     let example = w.exemple.trim_matches(['«', '»', '“', '”', ' ', '"']);
-    doc.text(&tr!("« {example} »", "“{example}”"), Style::default().small());
+    doc.text(&tr!("« {example} »", "“{example}”", "“{example}”"), Style::default().small());
     doc.feed(1);
-    doc.hanging(i18n::t("Étymologie : ", "Etymology: "), &w.etymologie, Style::default().small());
+    doc.hanging(i18n::t("Étymologie : ", "Etymology: ", "Etymologie: "), &w.etymologie, Style::default().small());
     Ok(doc)
 }
 

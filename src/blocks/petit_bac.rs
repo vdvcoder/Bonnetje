@@ -110,17 +110,17 @@ pub fn build(letter: Option<char>, categories: &[String], count: u8, players: u8
             doc.line(&"- ".repeat(21), Style::default());
             doc.feed(1);
         }
-        doc.header(t("Petit bac", "Categories"));
+        doc.header(t("Petit bac", "Categories", "Categorieën"));
         doc.feed(1);
-        doc.text(t("La lettre est", "The letter is"), Style::default().center());
+        doc.text(t("La lettre est", "The letter is", "De letter is"), Style::default().center());
         doc.text(&letter.to_string(), Style::default().bold().center().size(5));
         doc.feed(1);
         for category in &categories {
             doc.line(&line(category, 42), Style::default());
             doc.feed(1);
         }
-        doc.line(&format!("{:>42}", t("Points : ......", "Points: ......")), Style::default().bold());
-        doc.text(&tr!("n° {seed}", "No. {seed}"), Style::default().small().align(Align::Right));
+        doc.line(&format!("{:>42}", t("Points : ......", "Points: ......", "Punten: ......")), Style::default().bold());
+        doc.text(&tr!("n° {seed}", "No. {seed}", "Nr. {seed}"), Style::default().small().align(Align::Right));
     }
     doc
 }

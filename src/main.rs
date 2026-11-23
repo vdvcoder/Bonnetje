@@ -199,25 +199,25 @@ fn user_command(action: &UserAction) -> Result<()> {
             std::io::stdin().read_line(&mut line)?;
             return Ok(line.trim_end_matches(['\r', '\n']).to_owned());
         }
-        let first = rpassword::prompt_password(tr!("Mot de passe pour {name} : ", "Password for {name}: "))?;
-        let again = rpassword::prompt_password(t("Confirmation : ", "Confirm: "))?;
-        anyhow::ensure!(first == again, "{}", t("les deux mots de passe diffèrent", "the two passwords differ"));
+        let first = rpassword::prompt_password(tr!("Mot de passe pour {name} : ", "Password for {name}: ", "Wachtwoord voor {name}: "))?;
+        let again = rpassword::prompt_password(t("Confirmation : ", "Confirm: ", "Bevestigen: "))?;
+        anyhow::ensure!(first == again, "{}", t("les deux mots de passe diffèrent", "the two passwords differ", "de twee wachtwoorden verschillen"));
         Ok(first)
     };
     let done = match action {
         UserAction::Add { name } => {
             let password = ask(name)?;
             store.add_user(name, &password)?;
-            tr!("compte « {name} » créé", "account \"{name}\" created")
+            tr!("compte « {name} » créé", "account \"{name}\" created", "account \"{name}\" aangemaakt")
         }
         UserAction::Passwd { name } => {
             let password = ask(name)?;
             store.set_password(name, &password)?;
-            tr!("mot de passe de « {name} » changé", "password of \"{name}\" changed")
+            tr!("mot de passe de « {name} » changé", "password of \"{name}\" changed", "wachtwoord van \"{name}\" gewijzigd")
         }
         UserAction::Remove { name } => {
             store.remove_user(name)?;
-            tr!("compte « {name} » supprimé", "account \"{name}\" deleted")
+            tr!("compte « {name} » supprimé", "account \"{name}\" deleted", "account \"{name}\" verwijderd")
         }
         UserAction::List => {
             for user in store.users() {
@@ -236,7 +236,7 @@ fn parse_cli() -> Cli {
     let heading = STYLES.get_usage();
     let template = format!(
         "{{about-with-newline}}\n{heading}{}{heading:#} {{usage}}\n\n{{all-args}}",
-        t("Utilisation :", "Usage:")
+        t("Utilisation :", "Usage:", "Gebruik:")
     );
     // Titres de sections à la française : « Options : », « Arguments : ».
     let headings = |cmd: clap::Command| {
@@ -244,9 +244,9 @@ fn parse_cli() -> Cli {
             if arg.get_help_heading().is_some() {
                 arg
             } else if arg.is_positional() {
-                arg.help_heading(t("Arguments ", "Arguments"))
+                arg.help_heading(t("Arguments ", "Arguments", "Argumenten"))
             } else {
-                arg.help_heading(t("Options ", "Options"))
+                arg.help_heading(t("Options ", "Options", "Opties"))
             }
         })
     };
@@ -408,7 +408,7 @@ fn run(cli: Cli) -> Result<()> {
                 anyhow::ensure!(
                     token.len() >= 16,
                     "{}",
-                    t("le jeton doit faire au moins 16 caractères", "the token must be at least 16 characters")
+                    t("le jeton doit faire au moins 16 caractères", "the token must be at least 16 characters", "het token moet minstens 16 tekens bevatten")
                 );
             }
             return server::serve(listen, token.clone(), target);
@@ -417,11 +417,11 @@ fn run(cli: Cli) -> Result<()> {
         Command::Print { file } => {
             let json = match file {
                 Some(path) if path.as_os_str() != "-" => std::fs::read_to_string(path)
-                    .with_context(|| tr!("impossible de lire {}", "cannot read {}", path.display()))?,
+                    .with_context(|| tr!("impossible de lire {}", "cannot read {}", "kan {} niet lezen", path.display()))?,
                 _ => read_stdin()?,
             };
             let ticket: blocks::Ticket =
-                serde_json::from_str(&json).context(t("ticket JSON invalide", "invalid ticket JSON"))?;
+                serde_json::from_str(&json).context(t("ticket JSON invalide", "invalid ticket JSON", "ongeldige bonnetje-JSON"))?;
             let mut progress: Box<dyn blocks::Progress> =
                 if cli.quiet { Box::new(blocks::Silent) } else { Box::new(ui::Console::new()) };
             // Un aperçu ne coûte rien, comme dans l'appli : Claude seulement si on le demande.
@@ -469,19 +469,19 @@ fn test_ticket() -> Doc {
     let base = Style::default();
     let mut doc = Doc::new();
     doc.text("PRINTR", base.bold().center().size(2))
-        .text(t("Ticket de test", "Test ticket"), base.center())
+        .text(t("Ticket de test", "Test ticket", "Testbonnetje"), base.center())
         .feed(1)
         .header("Styles")
         .text("Normal", base)
-        .text(t("Gras", "Bold"), base.bold())
-        .text(t("Souligné", "Underlined"), base.underline())
-        .text(t(" Inversé ", " Reverse "), base.reverse())
-        .text(t("Police B, plus petite", "Font B, smaller"), base.small())
-        .text(t("Double taille", "Double size"), base.size(2))
+        .text(t("Gras", "Bold", "Vet"), base.bold())
+        .text(t("Souligné", "Underlined", "Onderlijnd"), base.underline())
+        .text(t(" Inversé ", " Reverse ", " Omgekeerd "), base.reverse())
+        .text(t("Police B, plus petite", "Font B, smaller", "Lettertype B, kleiner"), base.small())
+        .text(t("Double taille", "Double size", "Dubbele grootte"), base.size(2))
         .feed(1)
-        .header(t("Caractères", "Characters"))
-        .text(t("Accents : éèêàçùôï ÉÀÇÒ € ° « »", "Accents: éèêàçùôï ÉÀÇÒ € ° « »"), base)
-        .text(t("Typographie : l’œuf… – fin", "Typography: l’œuf… – fin"), base)
+        .header(t("Caractères", "Characters", "Tekens"))
+        .text(t("Accents : éèêàçùôï ÉÀÇÒ € ° « »", "Accents: éèêàçùôï ÉÀÇÒ € ° « »", "Accenten: éèêàçùôï ÉÀÇÒ € ° « »"), base)
+        .text(t("Typographie : l’œuf… – fin", "Typography: l’œuf… – fin", "Typografie: l’œuf… – einde"), base)
         .text("123456789012345678901234567890123456789012", base)
         .rule('─')
         .feed(1)

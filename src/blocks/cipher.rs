@@ -25,9 +25,9 @@ pub enum Cipher {
 impl Cipher {
     pub fn label(self) -> &'static str {
         match self {
-            Cipher::Cesar => t("César", "Caesar"),
+            Cipher::Cesar => t("César", "Caesar", "Caesar"),
             Cipher::Morse => "morse",
-            Cipher::Nombres => t("nombres", "numbers"),
+            Cipher::Nombres => t("nombres", "numbers", "getallen"),
         }
     }
 }
@@ -124,12 +124,12 @@ fn key(cipher: Cipher, shift: u8) -> Vec<String> {
             vec![
                 tr!(
                     "Chaque lettre a avancé de {shift} : A est devenu {}.",
-                    "Each letter moved forward by {shift}: A became {}.",
+                    "Each letter moved forward by {shift}: A became {}.", "Elke letter schoof {shift} op: A werd {}.",
                     &shifted[..1]
                 ),
                 t(
                     "En haut la lettre codée, en dessous la vraie lettre :",
-                    "Top: the coded letter. Bottom: the real one:",
+                    "Top: the coded letter. Bottom: the real one:", "Boven: de gecodeerde letter. Onder: de echte:",
                 )
                 .to_owned(),
                 String::new(),
@@ -141,7 +141,7 @@ fn key(cipher: Cipher, shift: u8) -> Vec<String> {
             let cells: Vec<String> = alphabet.iter().zip(MORSE).map(|(c, m)| format!("{c} {m:<6}")).collect();
             let hint = t(
                 "Un espace entre les lettres, « / » entre les mots.",
-                "One space between letters, \"/\" between words.",
+                "One space between letters, \"/\" between words.", "Eén spatie tussen letters, \"/\" tussen woorden.",
             );
             let mut lines = vec![hint.to_owned(), String::new()];
             lines.extend(cells.chunks(6).map(|row| row.join(" ").trim_end().to_owned()));
@@ -151,7 +151,7 @@ fn key(cipher: Cipher, shift: u8) -> Vec<String> {
             let cells: Vec<String> = alphabet.iter().enumerate().map(|(i, c)| format!("{c}={:<2}", i + 1)).collect();
             let hint = t(
                 "Chaque nombre est le rang d'une lettre dans l'alphabet.",
-                "Each number is a letter's place in the alphabet.",
+                "Each number is a letter's place in the alphabet.", "Elk getal is de plaats van een letter in het alfabet.",
             );
             let mut lines = vec![hint.to_owned(), String::new()];
             lines.extend(cells.chunks(9).map(|row| row.join(" ").trim_end().to_owned()));
@@ -171,8 +171,8 @@ pub fn build(message: Option<&str>, cipher: Cipher, shift: Option<u8>, answer: b
     let coded = encode(&normalize(plain), cipher, shift);
 
     let mut doc = Doc::new();
-    doc.header(t("Message codé", "Secret message"));
-    doc.text(&tr!("Code : {}", "Code: {}", cipher.label()), Style::default().small().center());
+    doc.header(t("Message codé", "Secret message", "Geheim bericht"));
+    doc.text(&tr!("Code : {}", "Code: {}", "Code: {}", cipher.label()), Style::default().small().center());
     doc.feed(1);
     let style = if cipher == Cipher::Cesar { Style::default().bold().size(2) } else { Style::default().bold() };
     doc.text(&coded, style.center());
@@ -182,7 +182,7 @@ pub fn build(message: Option<&str>, cipher: Cipher, shift: Option<u8>, answer: b
     }
     if answer {
         doc.feed(1);
-        doc.text(&tr!("Message : {plain}", "Message: {plain}"), Style::default().small().upside_down());
+        doc.text(&tr!("Message : {plain}", "Message: {plain}", "Bericht: {plain}"), Style::default().small().upside_down());
     }
     doc
 }

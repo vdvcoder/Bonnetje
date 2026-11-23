@@ -31,9 +31,9 @@ impl Difficulty {
     }
     pub fn label(self) -> &'static str {
         match self {
-            Difficulty::Easy => crate::i18n::t("facile", "easy"),
-            Difficulty::Medium => crate::i18n::t("moyen", "medium"),
-            Difficulty::Hard => crate::i18n::t("difficile", "hard"),
+            Difficulty::Easy => crate::i18n::t("facile", "easy", "makkelijk"),
+            Difficulty::Medium => crate::i18n::t("moyen", "medium", "middelgroot"),
+            Difficulty::Hard => crate::i18n::t("difficile", "hard", "moeilijk"),
         }
     }
 }
@@ -152,14 +152,14 @@ pub fn build(difficulty: Difficulty, seed: Option<u64>, solution: bool) -> Doc {
 
     let mut doc = Doc::new();
     let title = if solution {
-        crate::i18n::t("Solution du sudoku", "Sudoku solution")
+        crate::i18n::t("Solution du sudoku", "Sudoku solution", "Sudoku-oplossing")
     } else {
-        crate::i18n::t("Sudoku", "Sudoku")
+        crate::i18n::t("Sudoku", "Sudoku", "Sudoku")
     };
     doc.header(&format!("{title} · {}", difficulty.label()));
     doc.feed(1);
     doc.image(render(if solution { &solved } else { &puzzle }));
-    doc.text(&tr!("n° {seed}", "No. {seed}"), Style::default().small().align(crate::doc::Align::Right));
+    doc.text(&tr!("n° {seed}", "No. {seed}", "Nr. {seed}"), Style::default().small().align(crate::doc::Align::Right));
     doc
 }
 

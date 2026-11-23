@@ -30,7 +30,7 @@ impl std::fmt::Display for Target {
         match self {
             Target::Device(path) => write!(f, "{}", path.display()),
             Target::Tcp(addr) => write!(f, "tcp://{addr}"),
-            Target::Dump(path) => write!(f, "{} ({})", path.display(), t("fichier", "file")),
+            Target::Dump(path) => write!(f, "{} ({})", path.display(), t("fichier", "file", "bestand")),
         }
     }
 }
@@ -49,12 +49,12 @@ impl Target {
                 stream.set_write_timeout(Some(WRITE_TIMEOUT))?;
                 stream
                     .write_all(bytes)
-                    .with_context(|| tr!("envoi vers {addr} interrompu", "sending to {addr} interrupted"))?;
+                    .with_context(|| tr!("envoi vers {addr} interrompu", "sending to {addr} interrupted", "verzenden naar {addr} onderbroken"))?;
                 stream.flush()?;
                 Ok(())
             }
             Target::Dump(path) => std::fs::write(path, bytes)
-                .with_context(|| tr!("impossible de créer {}", "cannot create {}", path.display())),
+                .with_context(|| tr!("impossible de créer {}", "cannot create {}", "kan {} niet aanmaken", path.display())),
             Target::Device(path) => write_device(path, bytes),
         }
     }
@@ -100,10 +100,10 @@ impl Status {
 
     pub fn message(self) -> &'static str {
         match self {
-            Status::Ready => t("imprimante prête", "printer ready"),
-            Status::CoverOpen => t("capot ouvert", "cover open"),
-            Status::PaperOut => t("plus de papier", "out of paper"),
-            Status::Missing => t("imprimante absente", "printer missing"),
+            Status::Ready => t("imprimante prête", "printer ready", "printer klaar"),
+            Status::CoverOpen => t("capot ouvert", "cover open", "klep open"),
+            Status::PaperOut => t("plus de papier", "out of paper", "papier op"),
+            Status::Missing => t("imprimante absente", "printer missing", "printer ontbreekt"),
         }
     }
 }
@@ -160,7 +160,7 @@ impl Stalled {
     pub fn message() -> &'static str {
         t(
             "l'imprimante ne prend plus rien (capot, papier ?) : le ticket sortira quand elle sera prête",
-            "the printer is not taking anything (cover, paper?): the ticket will come out when it is ready",
+            "the printer is not taking anything (cover, paper?): the ticket will come out when it is ready", "de printer neemt niets meer aan (klep, papier?): het bonnetje komt eruit zodra hij klaar is",
         )
     }
 
@@ -182,12 +182,12 @@ fn connect(addr: &str, timeout: Duration) -> Result<TcpStream> {
     let target = addr
         .to_socket_addrs()
         .with_context(|| {
-            tr!("adresse invalide : {addr} (hôte:port attendu)", "invalid address: {addr} (host:port expected)")
+            tr!("adresse invalide : {addr} (hôte:port attendu)", "invalid address: {addr} (host:port expected)", "ongeldig adres: {addr} (host:poort verwacht)")
         })?
         .next()
-        .with_context(|| tr!("adresse introuvable : {addr}", "address not found: {addr}"))?;
+        .with_context(|| tr!("adresse introuvable : {addr}", "address not found: {addr}", "adres niet gevonden: {addr}"))?;
     TcpStream::connect_timeout(&target, timeout)
-        .with_context(|| tr!("impossible de se connecter à {addr}", "cannot connect to {addr}"))
+        .with_context(|| tr!("impossible de se connecter à {addr}", "cannot connect to {addr}", "kan geen verbinding maken met {addr}"))
 }
 
 /// Écrit sur le périphérique USB dans un fil à part : si l'imprimante bloque l'écriture (plus de
@@ -200,7 +200,7 @@ fn write_device_within(path: &Path, bytes: &[u8], timeout: Duration) -> Result<(
     let mut file = OpenOptions::new().write(true).open(path).with_context(|| {
         tr!(
             "impossible d'ouvrir {} (imprimante branchée ? droits udev ?)",
-            "cannot open {} (printer plugged in? udev permissions?)",
+            "cannot open {} (printer plugged in? udev permissions?)", "kan {} niet openen (printer aangesloten? udev-rechten?)",
             path.display()
         )
     })?;
@@ -210,10 +210,10 @@ fn write_device_within(path: &Path, bytes: &[u8], timeout: Duration) -> Result<(
         let _ = done.send(file.write_all(&bytes).and_then(|()| file.flush()));
     });
     match wait.recv_timeout(timeout) {
-        Ok(result) => result.with_context(|| tr!("écriture sur {} impossible", "cannot write to {}", path.display())),
+        Ok(result) => result.with_context(|| tr!("écriture sur {} impossible", "cannot write to {}", "kan niet schrijven naar {}", path.display())),
         Err(RecvTimeoutError::Timeout) => Err(Stalled(Mutex::new(Some(wait))).into()),
         Err(RecvTimeoutError::Disconnected) => {
-            anyhow::bail!("{}", tr!("écriture sur {} interrompue", "writing to {} interrupted", path.display()))
+            anyhow::bail!("{}", tr!("écriture sur {} interrompue", "writing to {} interrupted", "schrijven naar {} onderbroken", path.display()))
         }
     }
 }

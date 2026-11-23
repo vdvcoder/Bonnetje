@@ -22,10 +22,10 @@ pub enum Kind {
 impl Kind {
     fn label(self) -> &'static str {
         match self {
-            Kind::Devinette => crate::i18n::t("devinette", "classic"),
+            Kind::Devinette => crate::i18n::t("devinette", "classic", "klassiek"),
             Kind::Charade => "charade",
-            Kind::Logique => crate::i18n::t("logique", "logic"),
-            Kind::Calcul => crate::i18n::t("calcul", "math"),
+            Kind::Logique => crate::i18n::t("logique", "logic", "logica"),
+            Kind::Calcul => crate::i18n::t("calcul", "math", "rekenen"),
         }
     }
 }
@@ -277,32 +277,32 @@ pub fn build(today: NaiveDate, kind: Option<Kind>, number: Option<usize>, answer
     let index = match number {
         Some(n) if (1..=riddles().len()).contains(&n) => n - 1,
         Some(n) => {
-            bail!("{}", tr!("énigme n° {n} inconnue (1 à {})", "riddle No. {n} unknown (1 to {})", riddles().len()))
+            bail!("{}", tr!("énigme n° {n} inconnue (1 à {})", "riddle No. {n} unknown (1 to {})", "raadsel nr. {n} onbekend (1 tot {})", riddles().len()))
         }
         None => of_day(today, kind),
     };
     let (riddle_kind, question, solution) = riddles()[index];
 
     let mut doc = Doc::new();
-    doc.header(&tr!("Énigme · {}", "Riddle · {}", riddle_kind.label()));
+    doc.header(&tr!("Énigme · {}", "Riddle · {}", "Raadsel · {}", riddle_kind.label()));
     doc.feed(1);
     doc.text(question, Style::default().bold());
-    doc.text(&tr!("n° {}", "No. {}", index + 1), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {}", "No. {}", "Nr. {}", index + 1), Style::default().small().align(Align::Right));
     match answer {
         Answer::UpsideDown => {
             doc.feed(1);
-            doc.text(&tr!("Réponse : {solution}", "Answer: {solution}"), Style::default().small().upside_down());
+            doc.text(&tr!("Réponse : {solution}", "Answer: {solution}", "Antwoord: {solution}"), Style::default().small().upside_down());
         }
         Answer::Below => {
             doc.feed(1);
-            doc.hanging(crate::i18n::t("Réponse : ", "Answer: "), solution, Style::default().small());
+            doc.hanging(crate::i18n::t("Réponse : ", "Answer: ", "Antwoord: "), solution, Style::default().small());
         }
         Answer::NextDay => {
             let yesterday = today.pred_opt().unwrap_or(today);
             let (_, previous, previous_solution) = riddles()[of_day(yesterday, kind)];
             doc.feed(1);
-            doc.text(&tr!("Hier : {previous}", "Yesterday: {previous}"), Style::default().small());
-            doc.hanging(crate::i18n::t("Réponse : ", "Answer: "), previous_solution, Style::default().small().bold());
+            doc.text(&tr!("Hier : {previous}", "Yesterday: {previous}", "Gisteren: {previous}"), Style::default().small());
+            doc.hanging(crate::i18n::t("Réponse : ", "Answer: ", "Antwoord: "), previous_solution, Style::default().small().bold());
         }
         Answer::None => {}
     }

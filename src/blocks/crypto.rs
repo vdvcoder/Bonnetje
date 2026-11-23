@@ -30,7 +30,7 @@ fn format_price(price: f64) -> String {
 
 pub fn build(agent: &ureq::Agent, coins: &[String], currency: &str) -> Result<Doc> {
     if coins.is_empty() {
-        bail!("{}", crate::i18n::t("aucune cryptomonnaie demandée", "no cryptocurrency requested"));
+        bail!("{}", crate::i18n::t("aucune cryptomonnaie demandée", "no cryptocurrency requested", "geen cryptomunt gevraagd"));
     }
     let currency = currency.to_lowercase();
     let prices: HashMap<String, HashMap<String, f64>> = agent
@@ -39,7 +39,7 @@ pub fn build(agent: &ureq::Agent, coins: &[String], currency: &str) -> Result<Do
         .query("vs_currencies", &currency)
         .query("include_24hr_change", "true")
         .call()
-        .context(crate::i18n::t("CoinGecko injoignable", "CoinGecko unreachable"))?
+        .context(crate::i18n::t("CoinGecko injoignable", "CoinGecko unreachable", "CoinGecko onbereikbaar"))?
         .body_mut()
         .read_json()?;
     let symbol = match currency.as_str() {
@@ -52,7 +52,7 @@ pub fn build(agent: &ureq::Agent, coins: &[String], currency: &str) -> Result<Do
     doc.header("Crypto");
     for coin in coins {
         let Some(p) = prices.get(coin) else {
-            doc.line(&tr!("{coin} : inconnu", "{coin}: unknown"), Style::default());
+            doc.line(&tr!("{coin} : inconnu", "{coin}: unknown", "{coin}: onbekend"), Style::default());
             continue;
         };
         let price = p.get(&currency).copied().unwrap_or(f64::NAN);
@@ -73,7 +73,7 @@ pub fn build(agent: &ureq::Agent, coins: &[String], currency: &str) -> Result<Do
         doc.line(&line, Style::default());
     }
     doc.text(
-        crate::i18n::t("Variation sur 24 h · CoinGecko", "24 h change · CoinGecko"),
+        crate::i18n::t("Variation sur 24 h · CoinGecko", "24 h change · CoinGecko", "Wijziging 24 u · CoinGecko"),
         Style::default().small().center(),
     );
     Ok(doc)

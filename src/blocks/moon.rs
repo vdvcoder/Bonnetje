@@ -86,16 +86,16 @@ pub fn build(now: DateTime<Utc>) -> Doc {
     };
 
     let mut doc = Doc::new();
-    doc.header(i18n::t("Lune", "Moon"));
+    doc.header(i18n::t("Lune", "Moon", "Maan"));
     doc.feed(1);
     doc.image(render(fraction));
     doc.text(name(age), Style::default().bold().center());
-    doc.text(&tr!("Éclairée à {illumination:.0} %", "Illuminated {illumination:.0}%"), Style::default().center());
+    doc.text(&tr!("Éclairée à {illumination:.0} %", "Illuminated {illumination:.0}%", "Verlicht {illumination:.0}%"), Style::default().center());
     let (full, new) = (in_days(SYNODIC_MONTH / 2.0), in_days(0.0));
-    let mut next = [(full, i18n::t("Pleine lune", "Full moon")), (new, i18n::t("Nouvelle lune", "New moon"))];
+    let mut next = [(full, i18n::t("Pleine lune", "Full moon", "Volle maan")), (new, i18n::t("Nouvelle lune", "New moon", "Nieuwe maan"))];
     next.sort_by(|a, b| a.0.total_cmp(&b.0));
     for (days, label) in next {
-        doc.text(&tr!("{label} : {}", "{label}: {}", date_in(days)), Style::default().small().center());
+        doc.text(&tr!("{label} : {}", "{label}: {}", "{label}: {}", date_in(days)), Style::default().small().center());
     }
     doc
 }

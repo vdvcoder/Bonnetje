@@ -23,8 +23,8 @@ pub enum Period {
 impl Period {
     pub fn label(self) -> &'static str {
         match self {
-            Period::Day => i18n::t("chaque jour", "daily"),
-            Period::Week => i18n::t("chaque semaine", "weekly"),
+            Period::Day => i18n::t("chaque jour", "daily", "dagelijks"),
+            Period::Week => i18n::t("chaque semaine", "weekly", "wekelijks"),
         }
     }
 }
@@ -60,28 +60,28 @@ fn clean(list: &[String]) -> Vec<String> {
 pub fn build(tasks: &[String], people: &[String], period: Period, today: NaiveDate) -> Result<Doc> {
     let (tasks, people) = (clean(tasks), clean(people));
     if tasks.is_empty() {
-        bail!("{}", i18n::t("indiquer les tâches", "give the chores"));
+        bail!("{}", i18n::t("indiquer les tâches", "give the chores", "geef de taken op"));
     }
     if people.is_empty() {
-        bail!("{}", i18n::t("indiquer qui les fait", "give who does them"));
+        bail!("{}", i18n::t("indiquer qui les fait", "give who does them", "geef op wie ze doet"));
     }
     let mut doc = Doc::new();
     match period {
         Period::Day => {
-            doc.header(i18n::t("Tâches du jour", "Today's chores"));
+            doc.header(i18n::t("Tâches du jour", "Today's chores", "Taken van vandaag"));
         }
         Period::Week => {
-            doc.header(i18n::t("Tâches de la semaine", "This week's chores"));
+            doc.header(i18n::t("Tâches de la semaine", "This week's chores", "Taken van deze week"));
             let (from, to) = (monday(today), monday(today) + Duration::days(6));
             let day = |d: NaiveDate| format!("{} {}", i18n::weekday_short(d), d.day());
-            doc.text(&tr!("du {} au {}", "{} to {}", day(from), day(to)), Style::default().small().center());
+            doc.text(&tr!("du {} au {}", "{} to {}", "{} tot {}", day(from), day(to)), Style::default().small().center());
         }
     }
     for (person, mine) in assign(&tasks, &people, turn(period, today)) {
         doc.feed(1);
         doc.text(person, Style::default().bold());
         if mine.is_empty() {
-            doc.text(i18n::t("    Repos !", "    Day off!"), Style::default());
+            doc.text(i18n::t("    Repos !", "    Day off!", "    Vrije dag!"), Style::default());
         }
         for task in mine {
             doc.hanging("[ ] ", task, Style::default());

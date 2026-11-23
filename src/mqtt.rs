@@ -56,11 +56,11 @@ fn parse_url(url: &str) -> Result<Broker> {
     let (scheme, rest) = url
         .trim()
         .split_once("://")
-        .with_context(|| tr!("adresse MQTT sans schéma : {url}", "MQTT address without a scheme: {url}"))?;
+        .with_context(|| tr!("adresse MQTT sans schéma : {url}", "MQTT address without a scheme: {url}", "MQTT-adres zonder schema: {url}"))?;
     let tls = match scheme {
         "mqtt" | "tcp" => false,
         "mqtts" | "ssl" => true,
-        _ => bail!("{}", tr!("schéma MQTT inconnu : {scheme}", "unknown MQTT scheme: {scheme}")),
+        _ => bail!("{}", tr!("schéma MQTT inconnu : {scheme}", "unknown MQTT scheme: {scheme}", "onbekend MQTT-schema: {scheme}")),
     };
     let rest = rest.trim_end_matches('/');
     let (auth, address) = match rest.rsplit_once('@') {
@@ -73,13 +73,13 @@ fn parse_url(url: &str) -> Result<Broker> {
     };
     let (host, port) = match address.rsplit_once(':') {
         Some((host, port)) => {
-            let port = port.parse().with_context(|| tr!("port MQTT invalide : {port}", "invalid MQTT port: {port}"))?;
+            let port = port.parse().with_context(|| tr!("port MQTT invalide : {port}", "invalid MQTT port: {port}", "ongeldige MQTT-poort: {port}"))?;
             (host, port)
         }
         None => (address, if tls { 8883 } else { 1883 }),
     };
     if host.is_empty() {
-        bail!("{}", tr!("adresse MQTT sans hôte : {url}", "MQTT address without a host: {url}"));
+        bail!("{}", tr!("adresse MQTT sans hôte : {url}", "MQTT address without a host: {url}", "MQTT-adres zonder host: {url}"));
     }
     Ok(Broker { host: host.to_owned(), port, tls, user, password })
 }
@@ -105,7 +105,7 @@ struct ShoppingMessage {
 fn decode(prefix: &str, topic: &str, payload: &[u8]) -> Result<Command> {
     let text = std::str::from_utf8(payload)
         .map_err(|_| {
-            anyhow::anyhow!("{}", t("message illisible (UTF-8 attendu)", "unreadable message (UTF-8 expected)"))
+            anyhow::anyhow!("{}", t("message illisible (UTF-8 attendu)", "unreadable message (UTF-8 expected)", "onleesbaar bericht (UTF-8 verwacht)"))
         })?
         .trim();
     let command = topic.strip_prefix(prefix).and_then(|s| s.strip_prefix('/'));
@@ -113,47 +113,47 @@ fn decode(prefix: &str, topic: &str, payload: &[u8]) -> Result<Command> {
     if command == Some("paper/roll") {
         let roll_mm = text.trim_matches('"').parse::<u32>().ok().map(|m| m.saturating_mul(1000));
         if roll_mm.is_some_and(|mm| !crate::store::Paper::ROLL_RANGE_MM.contains(&mm)) {
-            bail!("{}", t("longueur de rouleau invalide (5 à 500 m)", "invalid roll length (5 to 500 m)"));
+            bail!("{}", t("longueur de rouleau invalide (5 à 500 m)", "invalid roll length (5 to 500 m)", "ongeldige rollengte (5 tot 500 m)"));
         }
         return Ok(Command::NewRoll(roll_mm));
     }
     if text.is_empty() {
-        bail!("{}", t("message vide", "empty message"));
+        bail!("{}", t("message vide", "empty message", "leeg bericht"));
     }
     let json = text.starts_with('{');
     match command {
         Some("print") => {
             let ticket = if json {
-                serde_json::from_str(text).context(t("ticket JSON invalide", "invalid ticket JSON"))?
+                serde_json::from_str(text).context(t("ticket JSON invalide", "invalid ticket JSON", "ongeldige bonnetje-JSON"))?
             } else {
                 serde_json::from_value(json!({ "blocks": [{ "type": "text", "text": text }] }))?
             };
-            Ok(Command::Print { ticket, label: t("Ticket (MQTT)", "MQTT ticket") })
+            Ok(Command::Print { ticket, label: t("Ticket (MQTT)", "MQTT ticket", "Bonnetje (MQTT)") })
         }
         Some("print/ticket") => Ok(Command::Preset(text.trim_matches('"').to_owned())),
         Some("todo") => {
             let request: TodoRequest = if json {
-                serde_json::from_str(text).context(t("liste JSON invalide", "invalid list JSON"))?
+                serde_json::from_str(text).context(t("liste JSON invalide", "invalid list JSON", "ongeldige lijst-JSON"))?
             } else {
                 serde_json::from_value(json!({ "text": text }))?
             };
-            Ok(Command::Print { ticket: request.into_ticket()?, label: t("Liste à faire", "To-do list") })
+            Ok(Command::Print { ticket: request.into_ticket()?, label: t("Liste à faire", "To-do list", "Takenlijst") })
         }
         Some("shopping") => {
             let text = if json {
                 serde_json::from_str::<ShoppingMessage>(text)
-                    .context(t("liste JSON invalide", "invalid list JSON"))?
+                    .context(t("liste JSON invalide", "invalid list JSON", "ongeldige lijst-JSON"))?
                     .text
             } else {
                 text.to_owned()
             };
             let items: Vec<String> = server::shopping_items(&text).into_iter().map(str::to_owned).collect();
             if items.is_empty() {
-                bail!("{}", t("rien à ajouter", "nothing to add"));
+                bail!("{}", t("rien à ajouter", "nothing to add", "niets toe te voegen"));
             }
             Ok(Command::Shopping(items))
         }
-        _ => bail!("{}", tr!("sujet inconnu : {topic}", "unknown topic: {topic}")),
+        _ => bail!("{}", tr!("sujet inconnu : {topic}", "unknown topic: {topic}", "onbekend topic: {topic}")),
     }
 }
 
@@ -162,10 +162,10 @@ fn run(app: &App, command: Command) -> Value {
     match command {
         Command::Print { ticket, label } => print(app, &ticket, label),
         Command::Preset(wanted) => match app.shared_preset(&wanted) {
-            None => failure(tr!("aucun ticket partagé nommé « {wanted} »", "no shared ticket named \"{wanted}\"")),
+            None => failure(tr!("aucun ticket partagé nommé « {wanted} »", "no shared ticket named \"{wanted}\"", "geen gedeeld bonnetje met de naam \"{wanted}\"")),
             Some(preset) => match serde_json::from_value::<Ticket>(preset.ticket) {
                 Ok(ticket) => print(app, &ticket, &preset.name),
-                Err(e) => failure(tr!("ticket « {} » invalide : {e}", "invalid ticket \"{}\": {e}", preset.name)),
+                Err(e) => failure(tr!("ticket « {} » invalide : {e}", "invalid ticket \"{}\": {e}", "ongeldig bonnetje \"{}\": {e}", preset.name)),
             },
         },
         Command::Shopping(items) => {
@@ -181,7 +181,7 @@ fn run(app: &App, command: Command) -> Value {
                     "{}",
                     tr!(
                         "nouveau rouleau ({} m), par MQTT",
-                        "new roll ({} m), over MQTT",
+                        "new roll ({} m), over MQTT", "nieuwe rol ({} m), via MQTT",
                         paper["roll_mm"].as_u64().unwrap_or(0) / 1000
                     )
                 );
@@ -222,14 +222,14 @@ fn tls_config() -> Result<rustls::ClientConfig> {
     roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
     if let Some(path) = std::env::var("PRINTR_MQTT_CA").ok().filter(|p| !p.trim().is_empty()) {
         let pem = std::fs::read(path.trim())
-            .with_context(|| tr!("certificat MQTT illisible : {path}", "unreadable MQTT certificate: {path}"))?;
+            .with_context(|| tr!("certificat MQTT illisible : {path}", "unreadable MQTT certificate: {path}", "onleesbaar MQTT-certificaat: {path}"))?;
         let mut added = 0;
         for cert in CertificateDer::pem_slice_iter(&pem) {
-            roots.add(cert.context(t("certificat PEM invalide", "invalid PEM certificate"))?)?;
+            roots.add(cert.context(t("certificat PEM invalide", "invalid PEM certificate", "ongeldig PEM-certificaat"))?)?;
             added += 1;
         }
         if added == 0 {
-            bail!("{}", tr!("aucun certificat PEM dans {path}", "no PEM certificate in {path}"));
+            bail!("{}", tr!("aucun certificat PEM dans {path}", "no PEM certificate in {path}", "geen PEM-certificaat in {path}"));
         }
     }
     Ok(rustls::ClientConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
@@ -269,7 +269,7 @@ pub fn spawn(app: Arc<App>) {
     let options = match parse_url(&url).and_then(|broker| options(&broker, &prefix)) {
         Ok(options) => options,
         Err(e) => {
-            eprintln!("{}", tr!("MQTT désactivé : {e:#}", "MQTT disabled: {e:#}"));
+            eprintln!("{}", tr!("MQTT désactivé : {e:#}", "MQTT disabled: {e:#}", "MQTT uitgeschakeld: {e:#}"));
             return;
         }
     };
@@ -312,7 +312,7 @@ fn connect(app: Arc<App>, options: MqttOptions, prefix: String) {
                 if result["ok"] != true {
                     eprintln!(
                         "{}",
-                        tr!("MQTT {topic} : {}", "MQTT {topic}: {}", result["error"].as_str().unwrap_or("?"))
+                        tr!("MQTT {topic} : {}", "MQTT {topic}: {}", "MQTT {topic}: {}", result["error"].as_str().unwrap_or("?"))
                     );
                 }
                 let mut result = result;
@@ -344,7 +344,7 @@ fn connect(app: Arc<App>, options: MqttOptions, prefix: String) {
                         "{}",
                         crate::i18n::t(
                             "MQTT : découverte coupée, retrait de l'appareil Home Assistant",
-                            "MQTT: discovery off, removing the Home Assistant device"
+                            "MQTT: discovery off, removing the Home Assistant device", "MQTT: discovery uit, Home Assistant-apparaat wordt verwijderd"
                         )
                     );
                     announced = true;
@@ -387,7 +387,7 @@ fn connect(app: Arc<App>, options: MqttOptions, prefix: String) {
                 backoff = Duration::from_secs(1);
                 eprintln!(
                     "{}",
-                    tr!("MQTT connecté à {address} ({prefix}/…)", "MQTT connected to {address} ({prefix}/…)")
+                    tr!("MQTT connecté à {address} ({prefix}/…)", "MQTT connected to {address} ({prefix}/…)", "MQTT verbonden met {address} ({prefix}/…)")
                 );
                 // Session neuve à chaque connexion : se réabonner, et redire qu'on est là.
                 for topic in ["print", "print/ticket", "todo", "shopping", "paper/roll"] {
@@ -445,7 +445,7 @@ fn connect(app: Arc<App>, options: MqttOptions, prefix: String) {
             Ok(_) => {}
             Err(e) => {
                 if connected || !warned {
-                    eprintln!("{}", tr!("MQTT {address} injoignable : {e}", "MQTT {address} unreachable: {e}"));
+                    eprintln!("{}", tr!("MQTT {address} injoignable : {e}", "MQTT {address} unreachable: {e}", "MQTT {address} onbereikbaar: {e}"));
                     warned = true;
                 }
                 connected = false;

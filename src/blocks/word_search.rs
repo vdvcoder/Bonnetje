@@ -63,20 +63,20 @@ pub(crate) const THEMES: [Theme; 14] = [
 impl Theme {
     pub fn label(self) -> &'static str {
         match self {
-            Theme::Animaux => t("animaux", "animals"),
-            Theme::FruitsLegumes => t("fruits et légumes", "fruit and vegetables"),
-            Theme::Cuisine => t("cuisine", "cooking"),
-            Theme::Nature => t("nature", "nature"),
-            Theme::Sport => t("sport", "sport"),
-            Theme::Metiers => t("métiers", "jobs"),
-            Theme::Maison => t("maison", "home"),
-            Theme::Voyage => t("voyage", "travel"),
-            Theme::Musique => t("musique", "music"),
-            Theme::Ecole => t("école", "school"),
-            Theme::Developpement => t("développement", "software"),
+            Theme::Animaux => t("animaux", "animals", "dieren"),
+            Theme::FruitsLegumes => t("fruits et légumes", "fruit and vegetables", "groenten en fruit"),
+            Theme::Cuisine => t("cuisine", "cooking", "koken"),
+            Theme::Nature => t("nature", "nature", "natuur"),
+            Theme::Sport => t("sport", "sport", "sport"),
+            Theme::Metiers => t("métiers", "jobs", "beroepen"),
+            Theme::Maison => t("maison", "home", "thuis"),
+            Theme::Voyage => t("voyage", "travel", "reizen"),
+            Theme::Musique => t("musique", "music", "muziek"),
+            Theme::Ecole => t("école", "school", "school"),
+            Theme::Developpement => t("développement", "software", "software"),
             Theme::Devops => "DevOps",
-            Theme::Reseaux => t("réseaux", "networks"),
-            Theme::Ia => t("intelligence artificielle", "artificial intelligence"),
+            Theme::Reseaux => t("réseaux", "networks", "netwerken"),
+            Theme::Ia => t("intelligence artificielle", "artificial intelligence", "artificiële intelligentie"),
         }
     }
 
@@ -293,9 +293,9 @@ fn settings(difficulty: Difficulty) -> (usize, usize, &'static [(i64, i64)]) {
 
 fn hint(difficulty: Difficulty) -> &'static str {
     match difficulty {
-        Difficulty::Easy => t("De gauche à droite et de haut en bas", "Left to right and top to bottom"),
-        Difficulty::Medium => t("Horizontal, vertical et en diagonale", "Across, down and diagonally"),
-        Difficulty::Hard => t("Dans tous les sens, même à l'envers", "Every direction, even backwards"),
+        Difficulty::Easy => t("De gauche à droite et de haut en bas", "Left to right and top to bottom", "Van links naar rechts en van boven naar onder"),
+        Difficulty::Medium => t("Horizontal, vertical et en diagonale", "Across, down and diagonally", "Horizontaal, verticaal en diagonaal"),
+        Difficulty::Hard => t("Dans tous les sens, même à l'envers", "Every direction, even backwards", "In alle richtingen, ook achterstevoren"),
     }
 }
 
@@ -418,9 +418,9 @@ pub fn build(difficulty: Difficulty, theme: Option<Theme>, words: &[String], see
 
     let mut doc = Doc::new();
     let title = if solution {
-        t("Solution des mots mêlés", "Word search solution")
+        t("Solution des mots mêlés", "Word search solution", "Oplossing woordzoeker")
     } else {
-        t("Mots mêlés", "Word search")
+        t("Mots mêlés", "Word search", "Woordzoeker")
     };
     match subject {
         Some(subject) if !solution => doc.header(&format!("{title} · {subject}")),
@@ -435,7 +435,7 @@ pub fn build(difficulty: Difficulty, theme: Option<Theme>, words: &[String], see
         let line: String = row.iter().map(|w| format!("{w:^14}")).collect();
         doc.line(&line, Style::default());
     }
-    doc.text(&tr!("n° {seed}", "No. {seed}"), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {seed}", "No. {seed}", "Nr. {seed}"), Style::default().small().align(Align::Right));
     doc
 }
 

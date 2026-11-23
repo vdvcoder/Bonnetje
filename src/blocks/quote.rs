@@ -98,7 +98,7 @@ pub fn build(today: NaiveDate) -> Doc {
     let index = (today.num_days_from_ce() as usize * 7) % quotes.len();
     let (quote, author) = quotes[index];
     let mut doc = Doc::new();
-    doc.text(&tr!("« {quote} »", "“{quote}”"), Style::default().center());
+    doc.text(&tr!("« {quote} »", "“{quote}”", "“{quote}”"), Style::default().center());
     doc.text(&format!("- {author}"), Style::default().small().align(Align::Right));
     doc
 }

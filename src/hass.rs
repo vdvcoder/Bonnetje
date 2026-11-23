@@ -88,7 +88,7 @@ pub fn entities(prefix: &str) -> Vec<(&'static str, &'static str, Value)> {
             "sensor",
             "status",
             with(
-                base("status", t("État", "Status")),
+                base("status", t("État", "Status", "Status")),
                 json!({
                     "state_topic": status,
                     "value_template": "{{ value_json.printer_status }}",
@@ -102,7 +102,7 @@ pub fn entities(prefix: &str) -> Vec<(&'static str, &'static str, Value)> {
             "binary_sensor",
             "problem",
             with(
-                base("problem", t("Problème", "Problem")),
+                base("problem", t("Problème", "Problem", "Probleem")),
                 json!({
                     "state_topic": status,
                     "value_template": "{{ 'ON' if value_json.printer_status not in ['ready', None] else 'OFF' }}",
@@ -114,7 +114,7 @@ pub fn entities(prefix: &str) -> Vec<(&'static str, &'static str, Value)> {
             "sensor",
             "paper",
             with(
-                base("paper", t("Papier restant", "Paper left")),
+                base("paper", t("Papier restant", "Paper left", "Papier over")),
                 json!({
                     "state_topic": status,
                     "value_template": "{{ value_json.paper.percent }}",
@@ -128,7 +128,7 @@ pub fn entities(prefix: &str) -> Vec<(&'static str, &'static str, Value)> {
             "sensor",
             "paper_length",
             with(
-                base("paper_length", t("Papier restant (longueur)", "Paper left (length)")),
+                base("paper_length", t("Papier restant (longueur)", "Paper left (length)", "Papier over (lengte)")),
                 json!({
                     "state_topic": status,
                     "value_template": "{{ (value_json.paper.remaining_mm / 1000) | round(1) }}",
@@ -143,7 +143,7 @@ pub fn entities(prefix: &str) -> Vec<(&'static str, &'static str, Value)> {
             "binary_sensor",
             "paper_low",
             with(
-                base("paper_low", t("Papier presque fini", "Paper almost out")),
+                base("paper_low", t("Papier presque fini", "Paper almost out", "Papier bijna op")),
                 json!({
                     "state_topic": status,
                     "value_template": "{{ 'ON' if value_json.paper.low else 'OFF' }}",
@@ -156,7 +156,7 @@ pub fn entities(prefix: &str) -> Vec<(&'static str, &'static str, Value)> {
             "sensor",
             "queued",
             with(
-                base("queued", t("Tickets en attente", "Queued tickets")),
+                base("queued", t("Tickets en attente", "Queued tickets", "Bonnetjes in wachtrij")),
                 json!({
                     "state_topic": status,
                     "value_template": "{{ value_json.queued }}",
@@ -169,7 +169,7 @@ pub fn entities(prefix: &str) -> Vec<(&'static str, &'static str, Value)> {
             "sensor",
             "last_ticket",
             with(
-                base("last_ticket", t("Dernier ticket", "Last ticket")),
+                base("last_ticket", t("Dernier ticket", "Last ticket", "Laatste bonnetje")),
                 json!({
                     "state_topic": status,
                     "value_template": "{{ value_json.last_ticket.label if value_json.last_ticket else '' }}",
@@ -183,7 +183,7 @@ pub fn entities(prefix: &str) -> Vec<(&'static str, &'static str, Value)> {
             "button",
             "new_roll",
             with(
-                base("new_roll", t("Nouveau rouleau", "New roll")),
+                base("new_roll", t("Nouveau rouleau", "New roll", "Nieuwe rol")),
                 json!({
                     "command_topic": format!("{prefix}/paper/roll"),
                     "payload_press": "new",
@@ -195,7 +195,7 @@ pub fn entities(prefix: &str) -> Vec<(&'static str, &'static str, Value)> {
             "text",
             "message",
             with(
-                base("message", t("Imprimer un texte", "Print a text")),
+                base("message", t("Imprimer un texte", "Print a text", "Een tekst afdrukken")),
                 json!({
                     "command_topic": format!("{prefix}/print"),
                     "max": 255,
@@ -225,7 +225,7 @@ fn device(prefix: &str) -> Value {
         "identifiers": [format!("printr_{}", node_id(prefix))],
         "name": if prefix == "printr" { "Printr".to_owned() } else { format!("Printr ({prefix})") },
         "manufacturer": "Printr",
-        "model": t("Imprimante à tickets", "Receipt printer"),
+        "model": t("Imprimante à tickets", "Receipt printer", "Bonprinter"),
         "sw_version": env!("CARGO_PKG_VERSION"),
     })
 }

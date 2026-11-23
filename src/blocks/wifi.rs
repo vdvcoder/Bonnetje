@@ -52,30 +52,30 @@ pub fn build(
     hidden: bool,
     show_password: bool,
 ) -> anyhow::Result<Doc> {
-    anyhow::ensure!(!ssid.trim().is_empty(), "{}", i18n::t("indiquer le nom du réseau", "give the network name"));
+    anyhow::ensure!(!ssid.trim().is_empty(), "{}", i18n::t("indiquer le nom du réseau", "give the network name", "geef de netwerknaam op"));
     let password = password.filter(|p| !p.is_empty());
     anyhow::ensure!(
         security == Security::None || password.is_some(),
         "{}",
         i18n::t(
             "indiquer le mot de passe, ou choisir un réseau ouvert",
-            "give the password, or choose an open network"
+            "give the password, or choose an open network", "geef het wachtwoord op, of kies een open netwerk"
         )
     );
 
     let mut doc = Doc::new();
-    doc.header(i18n::t("Wi-Fi invités", "Guest Wi-Fi"));
+    doc.header(i18n::t("Wi-Fi invités", "Guest Wi-Fi", "Gasten-wifi"));
     doc.feed(1);
     doc.qr(&payload(ssid, password, security, hidden), 8);
     doc.feed(1);
     doc.text(
-        i18n::t("Scanne avec l'appareil photo pour te connecter", "Scan with your camera to connect"),
+        i18n::t("Scanne avec l'appareil photo pour te connecter", "Scan with your camera to connect", "Scan met je camera om te verbinden"),
         Style::default().small().center(),
     );
     doc.feed(1);
-    doc.hanging(i18n::t("Réseau : ", "Network: "), ssid, Style::default().bold());
+    doc.hanging(i18n::t("Réseau : ", "Network: ", "Netwerk: "), ssid, Style::default().bold());
     if let (Some(password), true) = (password, show_password) {
-        doc.hanging(i18n::t("Mot de passe : ", "Password: "), password, Style::default().bold());
+        doc.hanging(i18n::t("Mot de passe : ", "Password: ", "Wachtwoord: "), password, Style::default().bold());
     }
     Ok(doc)
 }

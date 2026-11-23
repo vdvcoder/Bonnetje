@@ -293,20 +293,20 @@ pub fn build(difficulty: Difficulty, seed: Option<u64>, solution: bool) -> Doc {
     let seed = seed.unwrap_or_else(|| rand::rng().random_range(1..100_000));
     let puzzle = generate(seed, difficulty);
     let mut doc = Doc::new();
-    let title = if solution { crate::i18n::t("Solution du hashi", "Hashi solution") } else { "Hashi" };
+    let title = if solution { crate::i18n::t("Solution du hashi", "Hashi solution", "Hashi-oplossing") } else { "Hashi" };
     doc.header(&format!("{title} · {}", difficulty.label()));
     if !solution {
         doc.text(
             crate::i18n::t(
                 "Relie toutes les îles par des ponts droits, un ou deux entre deux îles, sans croisement ; le chiffre dit combien de ponts partent de l'île.",
-                "Connect all the islands with straight bridges, one or two between two islands, never crossing; the number says how many bridges leave the island.",
+                "Connect all the islands with straight bridges, one or two between two islands, never crossing; the number says how many bridges leave the island.", "Verbind alle eilanden met rechte bruggen, één of twee tussen twee eilanden, zonder kruising; het cijfer geeft aan hoeveel bruggen van het eiland vertrekken.",
             ),
             Style::default().small(),
         );
     }
     doc.feed(1);
     doc.image(render(&puzzle, solution));
-    doc.text(&tr!("n° {seed}", "No. {seed}"), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {seed}", "No. {seed}", "Nr. {seed}"), Style::default().small().align(Align::Right));
     doc
 }
 

@@ -30,12 +30,12 @@ struct Current {
 /// Qualificatif de l'indice européen de qualité de l'air.
 fn aqi_label(aqi: f64) -> &'static str {
     match aqi {
-        a if a <= 20.0 => i18n::t("Bonne", "Good"),
-        a if a <= 40.0 => i18n::t("Correcte", "Fair"),
-        a if a <= 60.0 => i18n::t("Moyenne", "Moderate"),
-        a if a <= 80.0 => i18n::t("Médiocre", "Poor"),
-        a if a <= 100.0 => i18n::t("Très médiocre", "Very poor"),
-        _ => i18n::t("Extrêmement médiocre", "Extremely poor"),
+        a if a <= 20.0 => i18n::t("Bonne", "Good", "Goed"),
+        a if a <= 40.0 => i18n::t("Correcte", "Fair", "Redelijk"),
+        a if a <= 60.0 => i18n::t("Moyenne", "Moderate", "Matig"),
+        a if a <= 80.0 => i18n::t("Médiocre", "Poor", "Slecht"),
+        a if a <= 100.0 => i18n::t("Très médiocre", "Very poor", "Zeer slecht"),
+        _ => i18n::t("Extrêmement médiocre", "Extremely poor", "Extreem slecht"),
     }
 }
 
@@ -52,7 +52,7 @@ pub fn build(agent: &ureq::Agent, location: &str, pollutants: bool, pollen: bool
         )
         .query("timezone", "auto")
         .call()
-        .context(i18n::t("Open-Meteo injoignable", "Open-Meteo unreachable"))?
+        .context(i18n::t("Open-Meteo injoignable", "Open-Meteo unreachable", "Open-Meteo onbereikbaar"))?
         .body_mut()
         .read_json()?;
     let c = r.current;
@@ -61,14 +61,14 @@ pub fn build(agent: &ureq::Agent, location: &str, pollutants: bool, pollen: bool
     let mut doc = Doc::new();
     doc.header(&format!("Air · {}", place.name));
     if let Some(aqi) = c.european_aqi {
-        doc.text(&tr!("Qualité de l'air : {}", "Air quality: {}", aqi_label(aqi)), Style::default().bold().center());
-        doc.text(&tr!("Indice européen {aqi:.0}", "European AQI {aqi:.0}"), Style::default().small().center());
+        doc.text(&tr!("Qualité de l'air : {}", "Air quality: {}", "Luchtkwaliteit: {}", aqi_label(aqi)), Style::default().bold().center());
+        doc.text(&tr!("Indice européen {aqi:.0}", "European AQI {aqi:.0}", "Europese AQI {aqi:.0}"), Style::default().small().center());
     }
     if pollutants {
         doc.text(
             &tr!(
                 "PM2,5 {} · PM10 {} · O3 {} · NO2 {} µg/m³",
-                "PM2.5 {} · PM10 {} · O3 {} · NO2 {} µg/m³",
+                "PM2.5 {} · PM10 {} · O3 {} · NO2 {} µg/m³", "PM2.5 {} · PM10 {} · O3 {} · NO2 {} µg/m³",
                 v(c.pm2_5),
                 v(c.pm10),
                 v(c.ozone),
@@ -82,20 +82,20 @@ pub fn build(agent: &ureq::Agent, location: &str, pollutants: bool, pollen: bool
     }
 
     let pollens: Vec<String> = [
-        (i18n::t("Aulne", "Alder"), c.alder_pollen),
-        (i18n::t("Bouleau", "Birch"), c.birch_pollen),
-        (i18n::t("Graminées", "Grass"), c.grass_pollen),
-        (i18n::t("Armoise", "Mugwort"), c.mugwort_pollen),
-        (i18n::t("Olivier", "Olive"), c.olive_pollen),
-        (i18n::t("Ambroisie", "Ragweed"), c.ragweed_pollen),
+        (i18n::t("Aulne", "Alder", "Els"), c.alder_pollen),
+        (i18n::t("Bouleau", "Birch", "Berk"), c.birch_pollen),
+        (i18n::t("Graminées", "Grass", "Gras"), c.grass_pollen),
+        (i18n::t("Armoise", "Mugwort", "Bijvoet"), c.mugwort_pollen),
+        (i18n::t("Olivier", "Olive", "Olijf"), c.olive_pollen),
+        (i18n::t("Ambroisie", "Ragweed", "Ambrosia"), c.ragweed_pollen),
     ]
     .into_iter()
     .filter_map(|(name, value)| value.filter(|&g| g >= 1.0).map(|g| format!("{name} {g:.0}")))
     .collect();
     let pollen_line = if pollens.is_empty() {
-        i18n::t("Pollens : rien à signaler", "Pollen: nothing to report").to_owned()
+        i18n::t("Pollens : rien à signaler", "Pollen: nothing to report", "Pollen: niets te melden").to_owned()
     } else {
-        tr!("Pollens (grains/m³) : {}", "Pollen (grains/m³): {}", pollens.join(" · "))
+        tr!("Pollens (grains/m³) : {}", "Pollen (grains/m³): {}", "Pollen (korrels/m³): {}", pollens.join(" · "))
     };
     doc.text(&pollen_line, Style::default().small().center());
     Ok(doc)

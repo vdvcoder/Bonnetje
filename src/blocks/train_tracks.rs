@@ -362,9 +362,9 @@ pub fn build(difficulty: Difficulty, seed: Option<u64>, solution: bool) -> Doc {
 
     let mut doc = Doc::new();
     let title = if solution {
-        crate::i18n::t("Solution de la voie ferrée", "Train tracks solution")
+        crate::i18n::t("Solution de la voie ferrée", "Train tracks solution", "Oplossing van de treinsporen")
     } else {
-        crate::i18n::t("Voie ferrée", "Train tracks")
+        crate::i18n::t("Voie ferrée", "Train tracks", "Treinsporen")
     };
     doc.header(&format!("{title} · {}", difficulty.label()));
     if !solution {
@@ -372,21 +372,21 @@ pub fn build(difficulty: Difficulty, seed: Option<u64>, solution: bool) -> Doc {
         doc.text(
             crate::i18n::t(
                 "Relie A à B par une seule voie, sans croisement.",
-                "Connect A to B with a single track, without crossing.",
+                "Connect A to B with a single track, without crossing.", "Verbind A met B via één spoor, zonder kruising.",
             ),
             small,
         );
         doc.text(
             crate::i18n::t(
                 "Nombres : cases de voie par ligne et par colonne.",
-                "Numbers: track cells per row and column.",
+                "Numbers: track cells per row and column.", "Getallen: sporen per rij en kolom.",
             ),
             small,
         );
     }
     doc.feed(1);
     doc.image(render(&puzzle, solution));
-    doc.text(&tr!("n° {seed}", "No. {seed}"), Style::default().small().align(Align::Right));
+    doc.text(&tr!("n° {seed}", "No. {seed}", "Nr. {seed}"), Style::default().small().align(Align::Right));
     doc
 }
 

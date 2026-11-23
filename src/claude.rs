@@ -116,7 +116,7 @@ impl Claude {
             Backend::Cli { program } => self.generate_cli(program, system, prompt, &schema, effort)?,
         };
         serde_json::from_value(value.clone())
-            .with_context(|| tr!("JSON inattendu de Claude : {value}", "unexpected JSON from Claude: {value}"))
+            .with_context(|| tr!("JSON inattendu de Claude : {value}", "unexpected JSON from Claude: {value}", "onverwachte JSON van Claude: {value}"))
     }
 
     fn generate_api(
@@ -149,20 +149,20 @@ impl Claude {
             request = request.header("anthropic-beta", "server-side-fallback-2026-07-01");
         }
 
-        let mut response = request.send_json(&body).context(t("API Claude injoignable", "Claude API unreachable"))?;
+        let mut response = request.send_json(&body).context(t("API Claude injoignable", "Claude API unreachable", "Claude-API onbereikbaar"))?;
         let status = response.status();
         let reply: Value = response
             .body_mut()
             .read_json()
-            .context(t("réponse de l'API Claude illisible", "Claude API response unreadable"))?;
+            .context(t("réponse de l'API Claude illisible", "Claude API response unreadable", "antwoord van de Claude-API onleesbaar"))?;
         debug(&reply);
         if !status.is_success() {
-            let message = reply["error"]["message"].as_str().unwrap_or(t("erreur inconnue", "unknown error"));
-            bail!("{}", tr!("API Claude ({status}) : {message}", "Claude API ({status}): {message}"));
+            let message = reply["error"]["message"].as_str().unwrap_or(t("erreur inconnue", "unknown error", "onbekende fout"));
+            bail!("{}", tr!("API Claude ({status}) : {message}", "Claude API ({status}): {message}", "Claude-API ({status}): {message}"));
         }
         match reply["stop_reason"].as_str() {
-            Some("refusal") => bail!("{}", t("Claude a refusé la requête", "Claude refused the request")),
-            Some("max_tokens") => bail!("{}", t("réponse de Claude tronquée", "Claude's response was cut short")),
+            Some("refusal") => bail!("{}", t("Claude a refusé la requête", "Claude refused the request", "Claude weigerde het verzoek")),
+            Some("max_tokens") => bail!("{}", t("réponse de Claude tronquée", "Claude's response was cut short", "antwoord van Claude afgekapt")),
             _ => {}
         }
 
@@ -174,7 +174,7 @@ impl Claude {
             .filter_map(|block| block["text"].as_str())
             .collect();
         serde_json::from_str(&text)
-            .with_context(|| tr!("JSON inattendu de Claude : {text}", "unexpected JSON from Claude: {text}"))
+            .with_context(|| tr!("JSON inattendu de Claude : {text}", "unexpected JSON from Claude: {text}", "onverwachte JSON van Claude: {text}"))
     }
 
     fn generate_cli(&self, program: &str, system: &str, prompt: &str, schema: &Value, effort: &str) -> Result<Value> {
@@ -200,12 +200,12 @@ impl Claude {
                 "{}",
                 tr!(
                     "CLI Claude introuvable (« {program} ») : installe-la ou définis PRINTR_CLAUDE_CLI",
-                    "Claude CLI not found (\"{program}\"): install it or set PRINTR_CLAUDE_CLI"
+                    "Claude CLI not found (\"{program}\"): install it or set PRINTR_CLAUDE_CLI", "Claude CLI niet gevonden (\"{program}\"): installeer ze of stel PRINTR_CLAUDE_CLI in"
                 )
             ),
             _ => anyhow::anyhow!(
                 "{}",
-                tr!("impossible de lancer la CLI Claude : {e}", "could not start the Claude CLI: {e}")
+                tr!("impossible de lancer la CLI Claude : {e}", "could not start the Claude CLI: {e}", "kon de Claude CLI niet starten: {e}")
             ),
         })?;
 
@@ -234,7 +234,7 @@ impl Claude {
             if start.elapsed() > timeout {
                 let _ = child.kill();
                 let _ = child.wait();
-                bail!("{}", t("la CLI Claude ne répond pas", "the Claude CLI is not responding"));
+                bail!("{}", t("la CLI Claude ne répond pas", "the Claude CLI is not responding", "de Claude CLI reageert niet"));
             }
             std::thread::sleep(Duration::from_millis(50));
         };
@@ -243,21 +243,21 @@ impl Claude {
 
         let Ok(reply) = serde_json::from_str::<Value>(&stdout) else {
             let message = stderr.lines().chain(stdout.lines()).rfind(|l| !l.trim().is_empty());
-            let message = message.unwrap_or(t("erreur inconnue", "unknown error"));
-            bail!("{}", tr!("CLI Claude ({status}) : {message}", "Claude CLI ({status}): {message}"));
+            let message = message.unwrap_or(t("erreur inconnue", "unknown error", "onbekende fout"));
+            bail!("{}", tr!("CLI Claude ({status}) : {message}", "Claude CLI ({status}): {message}", "Claude CLI ({status}): {message}"));
         };
         debug(&reply);
         if reply["is_error"].as_bool() == Some(true) || !status.success() {
             let message =
-                reply["result"].as_str().or(reply["subtype"].as_str()).unwrap_or(t("erreur inconnue", "unknown error"));
-            bail!("{}", tr!("CLI Claude : {message}", "Claude CLI: {message}"));
+                reply["result"].as_str().or(reply["subtype"].as_str()).unwrap_or(t("erreur inconnue", "unknown error", "onbekende fout"));
+            bail!("{}", tr!("CLI Claude : {message}", "Claude CLI: {message}", "Claude CLI: {message}"));
         }
         match reply.get("structured_output") {
             Some(value) if !value.is_null() => Ok(value.clone()),
             _ => {
                 let text = reply["result"].as_str().unwrap_or_default();
                 serde_json::from_str(text)
-                    .with_context(|| tr!("JSON inattendu de Claude : {text}", "unexpected JSON from Claude: {text}"))
+                    .with_context(|| tr!("JSON inattendu de Claude : {text}", "unexpected JSON from Claude: {text}", "onverwachte JSON van Claude: {text}"))
             }
         }
     }
@@ -293,7 +293,7 @@ fn supports_default_fallbacks(model: &str) -> bool {
 pub fn missing() -> &'static str {
     t(
         "Claude indisponible : définis ANTHROPIC_API_KEY, pointe ANTHROPIC_BASE_URL vers un serveur compatible, ou installe la CLI Claude",
-        "Claude unavailable: set ANTHROPIC_API_KEY, point ANTHROPIC_BASE_URL at a compatible server, or install the Claude CLI",
+        "Claude unavailable: set ANTHROPIC_API_KEY, point ANTHROPIC_BASE_URL at a compatible server, or install the Claude CLI", "Claude niet beschikbaar: stel ANTHROPIC_API_KEY in, laat ANTHROPIC_BASE_URL naar een compatibele server wijzen, of installeer de Claude CLI",
     )
 }
 

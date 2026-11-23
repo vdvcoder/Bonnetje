@@ -105,7 +105,7 @@ fn ask(claude: &Claude, children: &[String], theme: &str, length: Length, past: 
     anyhow::ensure!(
         !story.paragraphs.is_empty(),
         "{}",
-        i18n::t("réponse de Claude incomplète", "incomplete answer from Claude")
+        i18n::t("réponse de Claude incomplète", "incomplete answer from Claude", "onvolledig antwoord van Claude")
     );
     Ok(story)
 }
@@ -113,7 +113,7 @@ fn ask(claude: &Claude, children: &[String], theme: &str, length: Length, past: 
 pub fn build(ctx: &Ctx, children: &str, theme: &str, length: Length) -> Result<Doc> {
     let children = names(children);
     if children.is_empty() {
-        bail!("{}", i18n::t("indiquer les prénoms des enfants", "give the children's names"));
+        bail!("{}", i18n::t("indiquer les prénoms des enfants", "give the children's names", "geef de namen van de kinderen op"));
     }
     let theme: String = theme.trim().chars().take(80).collect();
     let key = format!(
@@ -132,8 +132,8 @@ pub fn build(ctx: &Ctx, children: &str, theme: &str, length: Length) -> Result<D
         Some(s) => s,
         None if ctx.preview => {
             return Ok(super::ai_placeholder(
-                i18n::t("Histoire du soir", "Bedtime story"),
-                &tr!("Une histoire avec {}", "A story with {}", children.join(", ")),
+                i18n::t("Histoire du soir", "Bedtime story", "Verhaaltje voor het slapengaan"),
+                &tr!("Une histoire avec {}", "A story with {}", "Een verhaal met {}", children.join(", ")),
             ));
         }
         None => {
@@ -149,7 +149,7 @@ pub fn build(ctx: &Ctx, children: &str, theme: &str, length: Length) -> Result<D
     };
     let mut doc = Doc::new();
     doc.from_cache = from_cache;
-    doc.header(i18n::t("Histoire du soir", "Bedtime story"));
+    doc.header(i18n::t("Histoire du soir", "Bedtime story", "Verhaaltje voor het slapengaan"));
     doc.feed(1);
     doc.text(&story.title, Style::default().bold().center());
     for paragraph in &story.paragraphs {
@@ -157,9 +157,9 @@ pub fn build(ctx: &Ctx, children: &str, theme: &str, length: Length) -> Result<D
         doc.text(paragraph.trim(), Style::default());
     }
     doc.feed(1);
-    doc.text(i18n::t("Fin. Bonne nuit !", "The end. Good night!"), Style::default().bold().center());
+    doc.text(i18n::t("Fin. Bonne nuit !", "The end. Good night!", "Einde. Slaap lekker!"), Style::default().bold().center());
     doc.text(
-        i18n::t("Histoire inventée par Claude", "Story made up by Claude"),
+        i18n::t("Histoire inventée par Claude", "Story made up by Claude", "Verhaal verzonnen door Claude"),
         Style::default().small().align(Align::Right),
     );
     Ok(doc)

@@ -65,7 +65,7 @@ impl crate::update::Host for App {
     fn restart_for_update(&self, update: &crate::update::Prepared) {
         let _printer = self.printer.lock().unwrap_or_else(|e| e.into_inner());
         if let Err(e) = update.swap() {
-            eprintln!("{}", tr!("mise à jour : {e:#}", "update: {e:#}"));
+            eprintln!("{}", tr!("mise à jour : {e:#}", "update: {e:#}", "update: {e:#}"));
             return;
         }
         let mut store = self.lock_store();
@@ -74,7 +74,7 @@ impl crate::update::Host for App {
             printed_at: None,
             preview: None,
             at: Utc::now(),
-            by: t("mise à jour", "update").to_owned(),
+            by: t("mise à jour", "update", "update").to_owned(),
             label: format!("printr {} → {}", update.from, update.to),
             ok: true,
             errors: Vec::new(),
@@ -82,7 +82,7 @@ impl crate::update::Host for App {
             paper_mm: None,
         });
         let _ = store.save();
-        eprintln!("{}", tr!("mise à jour : redémarrage sur printr {}", "update: restarting on printr {}", update.to));
+        eprintln!("{}", tr!("mise à jour : redémarrage sur printr {}", "update: restarting on printr {}", "update: opnieuw starten op Bonnetje {}", update.to));
         std::process::exit(crate::settings::RESTART_CODE);
     }
 }
@@ -90,7 +90,7 @@ impl crate::update::Host for App {
 fn busy_reason() -> &'static str {
     t(
         "un ticket précédent attend encore l'imprimante (capot, papier ?)",
-        "an earlier ticket is still waiting for the printer (cover, paper?)",
+        "an earlier ticket is still waiting for the printer (cover, paper?)", "een eerder ticket wacht nog op de printer (deksel, papier?)",
     )
 }
 
@@ -154,7 +154,7 @@ impl App {
         let wait = (recent[0].at + chrono::Duration::hours(1) - Utc::now()).num_minutes().max(1);
         Some(tr!(
             "{} impressions dans l'heure, c'est le maximum : réessaie dans {wait} min",
-            "limit is {} prints per hour: try again in {wait} min",
+            "limit is {} prints per hour: try again in {wait} min", "limiet is {} afdrukken per uur: probeer het over {wait} min opnieuw",
             self.max_per_hour
         ))
     }
@@ -219,7 +219,7 @@ impl App {
         if status != was {
             match status {
                 Status::Ready | Status::Missing => eprintln!("{}", status.message()),
-                _ => eprintln!("{}", tr!("imprimante : {}", "printer: {}", status.message())),
+                _ => eprintln!("{}", tr!("imprimante : {}", "printer: {}", "printer: {}", status.message())),
             }
         }
         // Plus de papier, puis prête : on a remis un rouleau, neuf a priori.
@@ -229,9 +229,9 @@ impl App {
             store.data.paper.new_roll(None);
             let roll_m = store.data.paper.roll_mm / 1000;
             if let Err(e) = store.save() {
-                eprintln!("{}", tr!("rouleau non enregistré : {e:#}", "roll not saved: {e:#}"));
+                eprintln!("{}", tr!("rouleau non enregistré : {e:#}", "roll not saved: {e:#}", "rol niet opgeslagen: {e:#}"));
             }
-            eprintln!("{}", tr!("nouveau rouleau ({roll_m} m)", "new roll ({roll_m} m)"));
+            eprintln!("{}", tr!("nouveau rouleau ({roll_m} m)", "new roll ({roll_m} m)", "nieuwe rol ({roll_m} m)"));
         }
     }
 
@@ -263,7 +263,7 @@ impl App {
     pub fn lock_store(&self) -> std::sync::MutexGuard<'_, Store> {
         let mut store = self.store.lock().unwrap_or_else(|e| e.into_inner());
         if let Err(e) = store.reload_if_changed() {
-            eprintln!("{}", tr!("données non relues : {e:#}", "data not reloaded: {e:#}"));
+            eprintln!("{}", tr!("données non relues : {e:#}", "data not reloaded: {e:#}", "gegevens niet opnieuw geladen: {e:#}"));
         }
         store
     }
@@ -359,7 +359,7 @@ impl App {
             store.data.shopping.retain(|item| item.added > started);
         }
         if let Err(e) = store.save() {
-            eprintln!("{}", tr!("historique non enregistré : {e:#}", "history not saved: {e:#}"));
+            eprintln!("{}", tr!("historique non enregistré : {e:#}", "history not saved: {e:#}", "geschiedenis niet opgeslagen: {e:#}"));
         }
         drop(store);
         drop(printer);
@@ -381,7 +381,7 @@ impl App {
         let outcome = match current.done.try_recv() {
             Err(TryRecvError::Empty) => return true,
             Ok(result) => result.map_err(|e| e.to_string()),
-            Err(TryRecvError::Disconnected) => Err(t("écriture interrompue", "writing interrupted").to_owned()),
+            Err(TryRecvError::Disconnected) => Err(t("écriture interrompue", "writing interrupted", "schrijven onderbroken").to_owned()),
         };
         let Some(done) = pending.take() else { return false };
         drop(pending);
@@ -402,14 +402,14 @@ impl App {
                 store.data.paper.consume(done.paper_mm);
             }
             if let Err(e) = store.save() {
-                eprintln!("{}", tr!("historique non enregistré : {e:#}", "history not saved: {e:#}"));
+                eprintln!("{}", tr!("historique non enregistré : {e:#}", "history not saved: {e:#}", "geschiedenis niet opgeslagen: {e:#}"));
             }
         }
         let waited = (Utc::now() - done.since).num_seconds();
         match outcome {
             Ok(()) => eprintln!(
                 "{}",
-                tr!("« {} » imprimé (en suspens {waited} s)", "\"{}\" printed (stalled {waited} s)", done.label)
+                tr!("« {} » imprimé (en suspens {waited} s)", "\"{}\" printed (stalled {waited} s)", "\"{}\" afgedrukt (vertraagd {waited} s)", done.label)
             ),
             Err(reason) => eprintln!("« {} » : {reason}", done.label),
         }
@@ -440,14 +440,14 @@ impl App {
             let outcome = if job.at < limit {
                 Err(tr!(
                     "abandonné : imprimante absente pendant plus de {} h",
-                    "dropped: printer missing for more than {} h",
+                    "dropped: printer missing for more than {} h", "geschrapt: printer meer dan {} u afwezig",
                     self.queue_hours
                 ))
             } else if !ready {
                 break;
             } else {
                 match crate::store::load_job(&job.id) {
-                    None => Err(t("ticket en attente perdu", "queued ticket lost").to_owned()),
+                    None => Err(t("ticket en attente perdu", "queued ticket lost", "wachtend ticket verloren").to_owned()),
                     Some(bytes) => match printer.write(&bytes) {
                         Ok(()) => {
                             out_now = true;
@@ -494,14 +494,14 @@ impl App {
                 store.data.paper.consume(paper_mm);
             }
             if let Err(e) = store.save() {
-                eprintln!("{}", tr!("historique non enregistré : {e:#}", "history not saved: {e:#}"));
+                eprintln!("{}", tr!("historique non enregistré : {e:#}", "history not saved: {e:#}", "geschiedenis niet opgeslagen: {e:#}"));
             }
             match outcome {
                 Ok(()) => eprintln!(
                     "{}",
                     tr!(
                         "« {} » imprimé (en attente depuis {})",
-                        "\"{}\" printed (queued since {})",
+                        "\"{}\" printed (queued since {})", "\"{}\" afgedrukt (in wachtrij sinds {})",
                         job.label,
                         job.at.with_timezone(&chrono::Local).format("%H:%M")
                     )
@@ -585,16 +585,16 @@ fn read_body(request: &mut Request, limit: u64) -> Result<Vec<u8>, Reply> {
         .as_reader()
         .take(limit + 1)
         .read_to_end(&mut body)
-        .map_err(|e| Reply::error(400, tr!("corps illisible : {e}", "unreadable body: {e}")))?;
+        .map_err(|e| Reply::error(400, tr!("corps illisible : {e}", "unreadable body: {e}", "onleesbare inhoud: {e}")))?;
     if body.len() as u64 > limit {
-        return Err(Reply::error(413, t("contenu trop volumineux", "content too large")));
+        return Err(Reply::error(413, t("contenu trop volumineux", "content too large", "inhoud te groot")));
     }
     Ok(body)
 }
 
 fn json_body<T: for<'de> Deserialize<'de>>(request: &mut Request) -> Result<T, Reply> {
     let body = read_body(request, MAX_JSON)?;
-    serde_json::from_slice(&body).map_err(|e| Reply::error(400, tr!("JSON invalide : {e}", "invalid JSON: {e}")))
+    serde_json::from_slice(&body).map_err(|e| Reply::error(400, tr!("JSON invalide : {e}", "invalid JSON: {e}", "ongeldige JSON: {e}")))
 }
 
 /// Nombre de blocs maximal d'un ticket venu du réseau : chacun peut lancer des requêtes et du
@@ -606,7 +606,7 @@ pub fn ticket_too_long(ticket: &Ticket) -> Option<String> {
     (ticket.blocks.len() > MAX_BLOCKS).then(|| {
         tr!(
             "ticket trop long ({} blocs, {MAX_BLOCKS} au plus)",
-            "ticket too long ({} blocks, {MAX_BLOCKS} max)",
+            "ticket too long ({} blocks, {MAX_BLOCKS} max)", "ticket te lang ({} blokken, max. {MAX_BLOCKS})",
             ticket.blocks.len()
         )
     })
@@ -621,7 +621,7 @@ fn check_ticket(ticket: Ticket) -> Result<Ticket, Reply> {
 
 fn parse_ticket(value: &Value) -> Result<Ticket, Reply> {
     let ticket = serde_json::from_value(value.clone())
-        .map_err(|e| Reply::error(400, tr!("ticket invalide : {e}", "invalid ticket: {e}")))?;
+        .map_err(|e| Reply::error(400, tr!("ticket invalide : {e}", "invalid ticket: {e}", "ongeldig ticket: {e}")))?;
     check_ticket(ticket)
 }
 
@@ -786,9 +786,9 @@ fn test_ticket_doc() -> crate::doc::Doc {
     use crate::doc::{Doc, Style};
     let mut doc = Doc::new();
     doc.text("Printr", Style::default().bold().center().size(2));
-    doc.text(t("Ça marche !", "It works!"), Style::default().center());
+    doc.text(t("Ça marche !", "It works!", "Het werkt!"), Style::default().center());
     doc.feed(1);
-    doc.text(t("Les accents doivent être lisibles :", "Accents should be readable:"), Style::default());
+    doc.text(t("Les accents doivent être lisibles :", "Accents should be readable:", "Accenten moeten leesbaar zijn:"), Style::default());
     doc.text("é è ê à â ç ù û ô î ï", Style::default().bold());
     doc.text("É È À Ç · 12,50 €", Style::default().bold());
     doc
@@ -928,7 +928,7 @@ impl TodoRequest {
             items.extend(text.lines().map(str::trim).filter(|l| !l.is_empty()).map(str::to_owned));
         }
         if items.is_empty() {
-            bail!("{}", t("aucune chose à faire (`items` ou `text`)", "nothing to do (`items` or `text`)"));
+            bail!("{}", t("aucune chose à faire (`items` ou `text`)", "nothing to do (`items` or `text`)", "niets te doen (`items` of `text`)"));
         }
         Ok(Ticket {
             cut: true,
@@ -946,7 +946,7 @@ fn validate_schedules(inputs: Vec<ScheduleInput>, previous: &[Schedule]) -> Resu
             days.sort_unstable();
             days.dedup();
             if days.is_empty() || days.iter().any(|d| !(1..=7).contains(d)) {
-                bail!("{}", t("jours de planification invalides", "invalid schedule days"));
+                bail!("{}", t("jours de planification invalides", "invalid schedule days", "ongeldige planningsdagen"));
             }
             let valid_time = s
                 .time
@@ -954,7 +954,7 @@ fn validate_schedules(inputs: Vec<ScheduleInput>, previous: &[Schedule]) -> Resu
                 .and_then(|(h, m)| Some((h.parse::<u32>().ok()?, m.parse::<u32>().ok()?)))
                 .is_some_and(|(h, m)| h < 24 && m < 60);
             if !valid_time {
-                bail!("{}", tr!("heure invalide : {}", "invalid time: {}", s.time));
+                bail!("{}", tr!("heure invalide : {}", "invalid time: {}", "ongeldig uur: {}", s.time));
             }
             let id = s.id.unwrap_or_else(|| store::new_id(6));
             let last_run = previous.iter().find(|p| p.id == id).and_then(|p| p.last_run);
@@ -984,7 +984,7 @@ fn save_upload(bytes: &[u8]) -> Result<String> {
     } else {
         img
     };
-    let dir = store::uploads_dir().context(t("répertoire de données introuvable", "data directory not found"))?;
+    let dir = store::uploads_dir().context(t("répertoire de données introuvable", "data directory not found", "gegevensmap niet gevonden"))?;
     std::fs::create_dir_all(&dir)?;
     let id = store::new_id(12);
     img.save_with_format(dir.join(format!("{id}.png")), image::ImageFormat::Png)?;
@@ -1019,7 +1019,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                 .header("Content-Security-Policy", CSP.split_whitespace().collect::<Vec<_>>().join(" "));
         }
     } else if !guard::same_origin(header(request, "Origin"), header(request, "Host")) {
-        return Reply::error(403, t("requête venue d'un autre site, refusée", "request from another site, refused"));
+        return Reply::error(403, t("requête venue d'un autre site, refusée", "request from another site, refused", "verzoek van een andere site, geweigerd"));
     }
 
     let segments: Vec<&str> = path.trim_matches('/').split('/').collect();
@@ -1036,15 +1036,15 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                 let minutes = wait.as_secs().div_ceil(60).max(1);
                 return Reply::error(
                     429,
-                    tr!("trop d'essais : réessaie dans {minutes} min", "too many attempts: try again in {minutes} min"),
+                    tr!("trop d'essais : réessaie dans {minutes} min", "too many attempts: try again in {minutes} min", "te veel pogingen: probeer het over {minutes} min opnieuw"),
                 )
-                .note(tr!("connexion bloquée pour {ip}", "login blocked for {ip}"));
+                .note(tr!("connexion bloquée pour {ip}", "login blocked for {ip}", "aanmelding geblokkeerd voor {ip}"));
             }
             // Argon2 est lent : la vérification se fait sans bloquer les données des autres.
             let hash = app.lock_store().password_hash(&login.user_id);
             if !hash.is_some_and(|h| app.guard.verify(&h, &login.password)) {
                 app.guard.failed(ip);
-                return Reply::error(401, t("mot de passe incorrect", "wrong password"));
+                return Reply::error(401, t("mot de passe incorrect", "wrong password", "verkeerd wachtwoord"));
             }
             app.guard.succeeded(ip);
             let mut store = app.lock_store();
@@ -1056,7 +1056,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             let name = user.as_ref().and_then(|u| u["name"].as_str()).unwrap_or("?").to_owned();
             return Reply::ok(json!({ "ok": true, "user": user }))
                 .header("Set-Cookie", session_cookie(&token, https))
-                .note(tr!("connexion de {name}", "login: {name}"));
+                .note(tr!("connexion de {name}", "login: {name}", "aanmelding: {name}"));
         }
         // Premier lancement : tant qu'aucun compte n'existe, l'écran d'accueil crée le premier.
         // Restauration : par l'administrateur, ou sur une installation neuve (aucun compte), depuis le
@@ -1072,7 +1072,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                 }
             };
             if !allowed {
-                return Reply::error(403, t("réservé à l'administrateur", "administrator only"));
+                return Reply::error(403, t("réservé à l'administrateur", "administrator only", "alleen voor de beheerder"));
             }
             let body = try_reply!(read_body(request, MAX_BACKUP));
             let mut store = app.lock_store();
@@ -1084,7 +1084,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                     }
                     Reply::ok(json!({ "ok": true, "users": r.users, "presets": r.presets, "images": r.images, "restarting": restarting }))
                         .header("Set-Cookie", format!("{COOKIE}=; Path=/; Max-Age=0"))
-                        .note(tr!("sauvegarde restaurée ({} comptes)", "backup restored ({} accounts)", r.users))
+                        .note(tr!("sauvegarde restaurée ({} comptes)", "backup restored ({} accounts)", "back-up hersteld ({} accounts)", r.users))
                 }
                 Err(e) => Reply::error(400, format!("{e:#}")),
             };
@@ -1093,19 +1093,19 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         (Method::Get, ["api", "wifi"]) => {
             return match crate::wifi::describe() {
                 Some(state) => Reply::ok(state),
-                None => Reply::error(404, t("pas de configuration Wi-Fi en cours", "no Wi-Fi setup in progress")),
+                None => Reply::error(404, t("pas de configuration Wi-Fi en cours", "no Wi-Fi setup in progress", "geen Wi-Fi-configuratie bezig")),
             };
         }
         (Method::Post, ["api", "wifi"]) => {
             if client.is_some_and(crate::net::is_public) {
-                return Reply::error(403, t("réservé au réseau local", "local network only"));
+                return Reply::error(403, t("réservé au réseau local", "local network only", "alleen voor het lokale netwerk"));
             }
             // Sans compte, même sur une installation déjà utilisée (Wi-Fi changé, déménagement) : le
             // point d'accès est protégé par le mot de passe imprimé sur le ticket, il faut donc avoir
             // l'imprimante sous la main. Et il n'existe que tant que Printr n'a pas de réseau.
             let input: WifiInput = try_reply!(json_body(request));
             return match crate::wifi::join(input.ssid.trim().to_owned(), input.password) {
-                Ok(()) => Reply::ok(json!({ "ok": true })).note(t("connexion au Wi-Fi", "joining the Wi-Fi")),
+                Ok(()) => Reply::ok(json!({ "ok": true })).note(t("connexion au Wi-Fi", "joining the Wi-Fi", "verbinden met de Wi-Fi")),
                 Err(e) => Reply::error(400, format!("{e:#}")),
             };
         }
@@ -1116,7 +1116,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                     403,
                     t(
                         "le premier compte se crée depuis le réseau de la maison",
-                        "the first account must be created from the home network",
+                        "the first account must be created from the home network", "het eerste account moet vanaf het thuisnetwerk worden aangemaakt",
                     ),
                 );
             }
@@ -1125,7 +1125,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             if !store.users().is_empty() {
                 return Reply::error(
                     403,
-                    t("des comptes existent déjà : connecte-toi", "accounts already exist: log in"),
+                    t("des comptes existent déjà : connecte-toi", "accounts already exist: log in", "er bestaan al accounts: meld je aan"),
                 );
             }
             let id = match store.add_user(&input.name, &input.password) {
@@ -1152,16 +1152,16 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             }
             return Reply::ok(json!({ "ok": true, "user": user, "restarting": restarting }))
                 .header("Set-Cookie", session_cookie(&token, https))
-                .note(tr!("premier compte : {}", "first account: {}", input.name.trim()));
+                .note(tr!("premier compte : {}", "first account: {}", "eerste account: {}", input.name.trim()));
         }
         _ => {}
     }
 
     let Some(caller) = caller(app, request) else {
         return if path.starts_with("/api/") || path == "/print" || path == "/todo" {
-            Reply::error(401, t("connexion requise", "login required"))
+            Reply::error(401, t("connexion requise", "login required", "aanmelding vereist"))
         } else {
-            Reply::error(404, t("page inconnue", "unknown page"))
+            Reply::error(404, t("page inconnue", "unknown page", "onbekende pagina"))
         };
     };
     let by = caller.name();
@@ -1182,7 +1182,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         // Comptes de la famille : tout membre connecté peut en ajouter ou en retirer.
         (Method::Post, ["api", "users"]) => {
             if user_id.is_none() {
-                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members"));
+                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members", "alleen voor gezinsleden"));
             }
             let input: NewUser = try_reply!(json_body(request));
             let mut store = app.lock_store();
@@ -1194,7 +1194,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             match store.save() {
                 Ok(()) => Reply::ok(json!({ "ok": true, "user": user })).note(tr!(
                     "compte créé par {by} : {}",
-                    "account created by {by}: {}",
+                    "account created by {by}: {}", "account aangemaakt door {by}: {}",
                     input.name.trim()
                 )),
                 Err(e) => Reply::error(500, format!("{e:#}")),
@@ -1202,34 +1202,34 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         }
         (Method::Delete, ["api", "users", id]) => {
             if user_id.is_none() {
-                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members"));
+                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members", "alleen voor gezinsleden"));
             }
             if user_id.as_deref() == Some(*id) {
                 return Reply::error(
                     400,
-                    t("tu ne peux pas supprimer ton propre compte", "you cannot delete your own account"),
+                    t("tu ne peux pas supprimer ton propre compte", "you cannot delete your own account", "je kunt je eigen account niet verwijderen"),
                 );
             }
             let mut store = app.lock_store();
             if !user_id.as_deref().is_some_and(|me| store.is_admin(me)) {
                 return Reply::error(
                     403,
-                    t("seul l'administrateur peut supprimer un compte", "only the administrator can delete an account"),
+                    t("seul l'administrateur peut supprimer un compte", "only the administrator can delete an account", "alleen de beheerder kan een account verwijderen"),
                 );
             }
             let Some(name) = store.user(id).map(|u| u.name.clone()) else {
-                return Reply::error(404, t("compte inconnu", "unknown account"));
+                return Reply::error(404, t("compte inconnu", "unknown account", "onbekend account"));
             };
             store.remove_user_id(id);
             match store.save() {
                 Ok(()) => Reply::ok(json!({ "ok": true }))
-                    .note(tr!("compte {name} supprimé par {by}", "account {name} deleted by {by}")),
+                    .note(tr!("compte {name} supprimé par {by}", "account {name} deleted by {by}", "account {name} verwijderd door {by}")),
                 Err(e) => Reply::error(500, format!("{e:#}")),
             }
         }
         (Method::Get, ["api", "me", "catalog"]) => {
             let Caller::User(me) = &caller else {
-                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members"));
+                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members", "alleen voor gezinsleden"));
             };
             let store = app.lock_store();
             let user = store.user(&me.id);
@@ -1240,17 +1240,17 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         }
         (Method::Put, ["api", "me", "catalog"]) => {
             let Caller::User(me) = &caller else {
-                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members"));
+                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members", "alleen voor gezinsleden"));
             };
             let input: MyCatalog = try_reply!(json_body(request));
             let check = |list: Option<Vec<String>>, max| list.map(|b| block_list(b, max).ok_or(())).transpose();
             let (Ok(favorites), Ok(recent)) = (check(input.favorites, MAX_FAVORITES), check(input.recent, MAX_RECENT))
             else {
-                return Reply::error(400, t("liste de blocs invalide", "invalid block list"));
+                return Reply::error(400, t("liste de blocs invalide", "invalid block list", "ongeldige bloklijst"));
             };
             let mut store = app.lock_store();
             let Some(user) = store.user_mut(&me.id) else {
-                return Reply::error(404, t("compte inconnu", "unknown account"));
+                return Reply::error(404, t("compte inconnu", "unknown account", "onbekend account"));
             };
             if let Some(favorites) = favorites {
                 user.favorites = favorites;
@@ -1265,7 +1265,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         }
         (Method::Put, ["api", "me", "password"]) => {
             let Caller::User(me) = &caller else {
-                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members"));
+                return Reply::error(403, t("réservé aux membres de la famille", "reserved for family members", "alleen voor gezinsleden"));
             };
             let input: NewPassword = try_reply!(json_body(request));
             let mut store = app.lock_store();
@@ -1277,7 +1277,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             match store.save() {
                 Ok(()) => Reply::ok(json!({ "ok": true }))
                     .header("Set-Cookie", session_cookie(&token, https))
-                    .note(tr!("mot de passe changé : {by}", "password changed: {by}")),
+                    .note(tr!("mot de passe changé : {by}", "password changed: {by}", "wachtwoord gewijzigd: {by}")),
                 Err(e) => Reply::error(500, format!("{e:#}")),
             }
         }
@@ -1322,14 +1322,14 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             if roll_mm.is_some_and(|mm| !crate::store::Paper::ROLL_RANGE_MM.contains(&mm)) {
                 return Reply::error(
                     400,
-                    t("longueur de rouleau invalide (5 à 500 m)", "invalid roll length (5 to 500 m)"),
+                    t("longueur de rouleau invalide (5 à 500 m)", "invalid roll length (5 to 500 m)", "ongeldige rollengte (5 tot 500 m)"),
                 );
             }
             match app.new_roll(roll_mm) {
                 Ok(paper) => {
                     let roll_m = paper["roll_mm"].as_u64().unwrap_or(0) / 1000;
                     Reply::ok(json!({ "ok": true, "paper": paper }))
-                        .note(tr!("nouveau rouleau ({roll_m} m) posé par {by}", "new roll ({roll_m} m) put in by {by}"))
+                        .note(tr!("nouveau rouleau ({roll_m} m) posé par {by}", "new roll ({roll_m} m) put in by {by}", "nieuwe rol ({roll_m} m) geplaatst door {by}"))
                 }
                 Err(e) => Reply::error(500, format!("{e:#}")),
             }
@@ -1337,13 +1337,13 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         (Method::Get, ["api", "backup"]) => {
             let store = app.lock_store();
             if !user_id.as_deref().is_some_and(|me| store.is_admin(me)) {
-                return Reply::error(403, t("réservé à l'administrateur", "administrator only"));
+                return Reply::error(403, t("réservé à l'administrateur", "administrator only", "alleen voor de beheerder"));
             }
             match crate::backup::export(&store) {
                 Ok(body) => {
                     let name = format!(
                         "{}-{}.json",
-                        t("printr-sauvegarde", "printr-backup"),
+                        t("printr-sauvegarde", "printr-backup", "bonnetje-backup"),
                         chrono::Local::now().format("%Y-%m-%d")
                     );
                     Reply {
@@ -1354,26 +1354,26 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                         note: String::new(),
                     }
                     .header("Content-Disposition", format!("attachment; filename=\"{name}\""))
-                    .note(t("sauvegarde téléchargée", "backup downloaded"))
+                    .note(t("sauvegarde téléchargée", "backup downloaded", "back-up gedownload"))
                 }
                 Err(e) => Reply::error(500, format!("{e:#}")),
             }
         }
         (Method::Get, ["api", "setup", "printers"]) => {
             if !user_id.as_deref().is_some_and(|me| app.lock_store().is_admin(me)) {
-                return Reply::error(403, t("réservé à l'administrateur", "administrator only"));
+                return Reply::error(403, t("réservé à l'administrateur", "administrator only", "alleen voor de beheerder"));
             }
             Reply::ok(crate::detect::printers())
         }
         (Method::Post, ["api", "setup", "test-print"]) => {
             let input: TestPrint = try_reply!(json_body(request));
             if !user_id.as_deref().is_some_and(|me| app.lock_store().is_admin(me)) {
-                return Reply::error(403, t("réservé à l'administrateur", "administrator only"));
+                return Reply::error(403, t("réservé à l'administrateur", "administrator only", "alleen voor de beheerder"));
             }
             let target = match (&input.device, &input.tcp) {
                 (Some(device), _) => match crate::settings::check("PRINTR_DEVICE", device) {
                     Ok(device) if !device.is_empty() => Target::Device(device.into()),
-                    Ok(_) => return Reply::error(400, t("imprimante manquante", "missing printer")),
+                    Ok(_) => return Reply::error(400, t("imprimante manquante", "missing printer", "printer ontbreekt")),
                     Err(e) => return Reply::error(400, format!("{e:#}")),
                 },
                 (None, Some(tcp)) => match crate::settings::check("PRINTR_TCP", tcp) {
@@ -1390,12 +1390,12 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                     Ok(_) => {
                         return Reply::error(
                             400,
-                            t("imprimante réseau locale attendue", "local network printer expected"),
+                            t("imprimante réseau locale attendue", "local network printer expected", "printer op lokaal netwerk verwacht"),
                         );
                     }
                     Err(e) => return Reply::error(400, format!("{e:#}")),
                 },
-                (None, None) => return Reply::error(400, t("imprimante manquante", "missing printer")),
+                (None, None) => return Reply::error(400, t("imprimante manquante", "missing printer", "printer ontbreekt")),
             };
             let bytes =
                 match crate::cp858::with_codepage(input.pc850, || crate::output::render(&test_ticket_doc(), true)) {
@@ -1406,7 +1406,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             let _printer = app.printer.lock().unwrap_or_else(|e| e.into_inner());
             match target.write(&bytes) {
                 Ok(()) => {
-                    Reply::ok(json!({ "ok": true })).note(tr!("ticket de test sur {target}", "test ticket on {target}"))
+                    Reply::ok(json!({ "ok": true })).note(tr!("ticket de test sur {target}", "test ticket on {target}", "testticket op {target}"))
                 }
                 Err(e) => Reply::error(502, format!("{e:#}")),
             }
@@ -1414,7 +1414,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         (Method::Post, ["api", "wizard", "done"]) => {
             let mut store = app.lock_store();
             if !user_id.as_deref().is_some_and(|me| store.is_admin(me)) {
-                return Reply::error(403, t("réservé à l'administrateur", "administrator only"));
+                return Reply::error(403, t("réservé à l'administrateur", "administrator only", "alleen voor de beheerder"));
             }
             store.data.wizard_pending = false;
             match store.save() {
@@ -1424,7 +1424,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         }
         (Method::Get, ["api", "settings"]) => {
             if !user_id.as_deref().is_some_and(|me| app.lock_store().is_admin(me)) {
-                return Reply::error(403, t("réservé à l'administrateur", "administrator only"));
+                return Reply::error(403, t("réservé à l'administrateur", "administrator only", "alleen voor de beheerder"));
             }
             Reply::ok(crate::settings::describe())
         }
@@ -1432,7 +1432,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             let input: SettingsInput = try_reply!(json_body(request));
             let mut store = app.lock_store();
             if !user_id.as_deref().is_some_and(|me| store.is_admin(me)) {
-                return Reply::error(403, t("réservé à l'administrateur", "administrator only"));
+                return Reply::error(403, t("réservé à l'administrateur", "administrator only", "alleen voor de beheerder"));
             }
             let mut changes = Vec::new();
             for (key, value) in &input.values {
@@ -1441,7 +1441,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                         409,
                         tr!(
                             "{key} est fixé par le système (/etc/printr.env)",
-                            "{key} is set by the system (/etc/printr.env)"
+                            "{key} is set by the system (/etc/printr.env)", "{key} wordt door het systeem ingesteld (/etc/printr.env)"
                         ),
                     );
                 }
@@ -1466,7 +1466,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                 crate::settings::restart_soon();
             }
             Reply::ok(json!({ "ok": true, "restarting": restarting }))
-                .note(tr!("réglages enregistrés par {by}", "settings saved by {by}"))
+                .note(tr!("réglages enregistrés par {by}", "settings saved by {by}", "instellingen opgeslagen door {by}"))
         }
         (Method::Put, ["api", "settings", "hidden-blocks"]) => {
             let input: HiddenBlocks = try_reply!(json_body(request));
@@ -1476,13 +1476,13 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                     403,
                     t(
                         "seul l'administrateur peut régler le catalogue",
-                        "only the administrator can set up the catalog",
+                        "only the administrator can set up the catalog", "alleen de beheerder kan de catalogus instellen",
                     ),
                 );
             }
             let mut blocks = input.blocks;
             if blocks.len() > 200 || blocks.iter().any(|b| !is_block_type(b)) {
-                return Reply::error(400, t("liste de blocs invalide", "invalid block list"));
+                return Reply::error(400, t("liste de blocs invalide", "invalid block list", "ongeldige bloklijst"));
             }
             blocks.sort();
             blocks.dedup();
@@ -1491,7 +1491,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             match store.save() {
                 Ok(()) => Reply::ok(json!({ "ok": true })).note(tr!(
                     "catalogue : {count} bloc(s) masqué(s) par {by}",
-                    "catalog: {count} block(s) hidden by {by}"
+                    "catalog: {count} block(s) hidden by {by}", "catalogus: {count} blok(ken) verborgen door {by}"
                 )),
                 Err(e) => Reply::error(500, format!("{e:#}")),
             }
@@ -1508,12 +1508,12 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                     .map(|r| json!({ "label": r.label, "error": r.error, "ms": r.elapsed.as_millis() as u64 }))
                     .collect::<Vec<_>>()
             );
-            Reply::ok(out).note(tr!("aperçu · {} blocs", "preview · {} blocks", reports.len()))
+            Reply::ok(out).note(tr!("aperçu · {} blocs", "preview · {} blocks", "voorbeeld · {} blokken", reports.len()))
         }
         (Method::Post, ["api", "print"]) => {
             let input: PrintRequest = try_reply!(json_body(request));
             let ticket = try_reply!(parse_ticket(&input.ticket));
-            let label = input.label.unwrap_or_else(|| t("Ticket composé", "Composed ticket").to_owned());
+            let label = input.label.unwrap_or_else(|| t("Ticket composé", "Composed ticket", "Samengesteld ticket").to_owned());
             if let Some(refused) = app.quota_exceeded(&by) {
                 return refused;
             }
@@ -1523,21 +1523,21 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             let body = try_reply!(read_body(request, MAX_IMAGE));
             match save_upload(&body) {
                 Ok(id) => {
-                    Reply::ok(json!({ "id": id })).note(tr!("photo de {} Ko", "photo of {} KB", body.len() / 1024))
+                    Reply::ok(json!({ "id": id })).note(tr!("photo de {} Ko", "photo of {} KB", "foto van {} KB", body.len() / 1024))
                 }
                 Err(e) => e.into(),
             }
         }
         (Method::Get, ["api", "images", id]) => {
             if !id.chars().all(|c| c.is_ascii_hexdigit()) {
-                return Reply::error(404, t("photo inconnue", "unknown photo"));
+                return Reply::error(404, t("photo inconnue", "unknown photo", "onbekende foto"));
             }
             match store::uploads_dir().map(|d| d.join(format!("{id}.png"))).and_then(|p| std::fs::read(p).ok()) {
                 Some(body) => {
                     Reply { status: 200, content_type: "image/png", body, headers: Vec::new(), note: String::new() }
                         .header("Cache-Control", "private, max-age=31536000, immutable".to_owned())
                 }
-                None => Reply::error(404, t("photo inconnue", "unknown photo")),
+                None => Reply::error(404, t("photo inconnue", "unknown photo", "onbekende foto")),
             }
         }
         (Method::Get, ["api", "presets"]) => {
@@ -1553,12 +1553,12 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         }
         (Method::Post, ["api", "presets"]) => {
             let Some(owner) = user_id else {
-                return Reply::error(403, t("réservé aux utilisateurs", "reserved for users"));
+                return Reply::error(403, t("réservé aux utilisateurs", "reserved for users", "voorbehouden aan gebruikers"));
             };
             let input: PresetInput = try_reply!(json_body(request));
             try_reply!(parse_ticket(&input.ticket));
             if input.name.trim().is_empty() {
-                return Reply::error(400, t("donne un nom à ton preset", "give your preset a name"));
+                return Reply::error(400, t("donne un nom à ton preset", "give your preset a name", "geef je preset een naam"));
             }
             let schedules = match validate_schedules(input.schedules, &[]) {
                 Ok(s) => s,
@@ -1576,7 +1576,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             };
             let mut store = app.lock_store();
             let out = preset_json(&preset, &store);
-            let note = tr!("preset « {} » créé", "preset \"{}\" created", preset.name);
+            let note = tr!("preset « {} » créé", "preset \"{}\" created", "preset \"{}\" aangemaakt", preset.name);
             store.data.presets.push(preset);
             match store.save() {
                 Ok(()) => Reply::ok(out).note(note),
@@ -1588,19 +1588,19 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                 if method == Method::Put { Some(try_reply!(json_body(request))) } else { None };
             let mut store = app.lock_store();
             let Some(index) = store.data.presets.iter().position(|p| p.id == *id) else {
-                return Reply::error(404, t("preset inconnu", "unknown preset"));
+                return Reply::error(404, t("preset inconnu", "unknown preset", "onbekende preset"));
             };
             if Some(&store.data.presets[index].owner) != user_id.as_ref() {
                 return Reply::error(
                     403,
-                    t("seul son auteur peut modifier ce preset", "only its author can edit this preset"),
+                    t("seul son auteur peut modifier ce preset", "only its author can edit this preset", "enkel de maker kan deze preset bewerken"),
                 );
             }
             let note;
             let out = match input {
                 None => {
                     let removed = store.data.presets.remove(index);
-                    note = tr!("preset « {} » supprimé", "preset \"{}\" deleted", removed.name);
+                    note = tr!("preset « {} » supprimé", "preset \"{}\" deleted", "preset \"{}\" verwijderd", removed.name);
                     json!({ "ok": true })
                 }
                 Some(input) => {
@@ -1617,7 +1617,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                     preset.ticket = input.ticket;
                     preset.schedules = schedules;
                     preset.updated = Utc::now();
-                    note = tr!("preset « {} » modifié", "preset \"{}\" edited", preset.name);
+                    note = tr!("preset « {} » modifié", "preset \"{}\" edited", "preset \"{}\" aangepast", preset.name);
                     let preset = preset.clone();
                     preset_json(&preset, &store)
                 }
@@ -1637,7 +1637,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                     .find(|p| p.id == *id && (p.shared || Some(&p.owner) == user_id.as_ref()))
                     .cloned()
             };
-            let Some(preset) = preset else { return Reply::error(404, t("preset inconnu", "unknown preset")) };
+            let Some(preset) = preset else { return Reply::error(404, t("preset inconnu", "unknown preset", "onbekende preset")) };
             let ticket = try_reply!(parse_ticket(&preset.ticket));
             if let Some(refused) = app.quota_exceeded(&by) {
                 return refused;
@@ -1653,13 +1653,13 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             let input: BirthdaysInput = try_reply!(json_body(request));
             let list = input.list.replace("\r\n", "\n");
             if list.len() > 10_000 || list.lines().count() > 200 || list.chars().any(|c| c.is_control() && c != '\n') {
-                return Reply::error(400, t("liste trop longue ou invalide", "list too long or invalid"));
+                return Reply::error(400, t("liste trop longue ou invalide", "list too long or invalid", "lijst te lang of ongeldig"));
             }
             let mut store = app.lock_store();
             store.data.family_birthdays = list.trim().to_owned();
             match store.save() {
                 Ok(()) => Reply::ok(json!({ "ok": true, "list": store.data.family_birthdays }))
-                    .note(t("anniversaires de la famille", "family birthdays")),
+                    .note(t("anniversaires de la famille", "family birthdays", "verjaardagen van de familie")),
                 Err(e) => Reply::error(500, format!("{e:#}")),
             }
         }
@@ -1671,12 +1671,12 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             let input: ShoppingInput = try_reply!(json_body(request));
             let items = shopping_items(&input.text);
             if items.is_empty() {
-                return Reply::error(400, t("rien à ajouter", "nothing to add"));
+                return Reply::error(400, t("rien à ajouter", "nothing to add", "niets toe te voegen"));
             }
             match app.add_shopping(&items, &by) {
                 Ok(()) => Reply::ok(shopping_json(&app.lock_store())).note(tr!(
                     "courses : {}",
-                    "shopping: {}",
+                    "shopping: {}", "boodschappen: {}",
                     items.join(", ")
                 )),
                 Err(e) => Reply::error(500, format!("{e:#}")),
@@ -1687,13 +1687,13 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             let note = match rest {
                 [] => {
                     store.data.shopping.clear();
-                    t("liste de courses vidée", "shopping list cleared").to_owned()
+                    t("liste de courses vidée", "shopping list cleared", "boodschappenlijst leeggemaakt").to_owned()
                 }
                 [id] => {
                     store.data.shopping.retain(|i| i.id != *id);
-                    t("article retiré", "item removed").to_owned()
+                    t("article retiré", "item removed", "item verwijderd").to_owned()
                 }
-                _ => return Reply::error(404, t("route inconnue", "unknown route")),
+                _ => return Reply::error(404, t("route inconnue", "unknown route", "onbekende route")),
             };
             match store.save() {
                 Ok(()) => Reply::ok(shopping_json(&store)).note(note),
@@ -1703,13 +1703,13 @@ fn handle(app: &App, request: &mut Request) -> Reply {
         // Aperçu d'un ticket de l'historique : l'administrateur seulement (pas le jeton des scripts).
         (Method::Get, ["api", "history", id, "preview"]) => {
             if !user_id.as_deref().is_some_and(|me| app.lock_store().is_admin(me)) {
-                return Reply::error(403, t("réservé à l'administrateur", "reserved for the administrator"));
+                return Reply::error(403, t("réservé à l'administrateur", "reserved for the administrator", "voorbehouden aan de beheerder"));
             }
             match crate::store::load_preview(id) {
                 Some(preview) => Reply::ok(preview),
                 None => Reply::error(
                     404,
-                    t("aperçu indisponible (plus de 30 jours ?)", "preview unavailable (older than 30 days?)"),
+                    t("aperçu indisponible (plus de 30 jours ?)", "preview unavailable (older than 30 days?)", "voorbeeld niet beschikbaar (ouder dan 30 dagen?)"),
                 ),
             }
         }
@@ -1723,10 +1723,10 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             let preview = query.split('&').any(|p| p == "preview" || p.starts_with("preview="));
             let body = try_reply!(read_body(request, MAX_JSON));
             let ticket: Result<Ticket> = if segments == ["print"] {
-                serde_json::from_slice(&body).context(t("ticket JSON invalide", "invalid ticket JSON"))
+                serde_json::from_slice(&body).context(t("ticket JSON invalide", "invalid ticket JSON", "ongeldige bonnetje-JSON"))
             } else {
                 serde_json::from_slice::<TodoRequest>(&body)
-                    .context(t("liste JSON invalide", "invalid list JSON"))
+                    .context(t("liste JSON invalide", "invalid list JSON", "ongeldige lijst-JSON"))
                     .and_then(TodoRequest::into_ticket)
             };
             let ticket = match ticket {
@@ -1741,20 +1741,20 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                     content_type: "text/plain; charset=utf-8",
                     body,
                     headers: Vec::new(),
-                    note: t("aperçu", "preview").into(),
+                    note: t("aperçu", "preview", "voorbeeld").into(),
                 };
             }
             let label = if segments == ["todo"] {
-                t("Liste à faire", "To-do list")
+                t("Liste à faire", "To-do list", "Takenlijst")
             } else {
-                t("Ticket (script)", "Script ticket")
+                t("Ticket (script)", "Script ticket", "Scriptticket")
             };
             if let Some(refused) = app.quota_exceeded(&by) {
                 return refused;
             }
             printed_reply(app.print(&ticket, &by, label), label)
         }
-        _ => Reply::error(404, t("route inconnue", "unknown route")),
+        _ => Reply::error(404, t("route inconnue", "unknown route", "onbekende route")),
     }
 }
 
@@ -1762,7 +1762,7 @@ fn printed_reply(printed: Printed, label: &str) -> Reply {
     if printed.stalled {
         return Reply::ok(json!({ "ok": true, "stalled": true, "errors": printed.errors }))
             .with_status(202)
-            .note(tr!("« {label} » en suspens (capot, papier ?)", "\"{label}\" stalled (cover, paper?)"));
+            .note(tr!("« {label} » en suspens (capot, papier ?)", "\"{label}\" stalled (cover, paper?)", "\"{label}\" blijft hangen (klep, papier?)"));
     }
     if let Some(reason) = printed.queued {
         return Reply::ok(json!({
@@ -1772,17 +1772,17 @@ fn printed_reply(printed: Printed, label: &str) -> Reply {
             "errors": printed.errors,
         }))
         .with_status(202)
-        .note(tr!("« {label} » en attente ({reason})", "\"{label}\" queued ({reason})"));
+        .note(tr!("« {label} » en attente ({reason})", "\"{label}\" queued ({reason})", "\"{label}\" in wachtrij ({reason})"));
     }
     match printed.failure {
         None => {
             let failed = if printed.errors.is_empty() {
                 String::new()
             } else {
-                tr!(" · {} bloc(s) en échec", " · {} block(s) failed", printed.errors.len())
+                tr!(" · {} bloc(s) en échec", " · {} block(s) failed", " · {} blok(ken) mislukt", printed.errors.len())
             };
             Reply::ok(json!({ "ok": true, "errors": printed.errors }))
-                .note(tr!("« {label} » imprimé{failed}", "\"{label}\" printed{failed}"))
+                .note(tr!("« {label} » imprimé{failed}", "\"{label}\" printed{failed}", "\"{label}\" afgedrukt{failed}"))
         }
         Some(failure) => Reply::error(503, failure),
     }
@@ -1811,7 +1811,7 @@ pub fn serve(listen: &str, token: Option<String>, target: Target) -> Result<()> 
         queue_hours: std::env::var("PRINTR_QUEUE_HOURS").ok().and_then(|v| v.trim().parse().ok()).unwrap_or(12),
     });
     let server = Server::http(listen).map_err(|e| {
-        anyhow::anyhow!("{}", tr!("impossible d'écouter sur {listen} : {e}", "cannot listen on {listen}: {e}"))
+        anyhow::anyhow!("{}", tr!("impossible d'écouter sur {listen} : {e}", "cannot listen on {listen}: {e}", "kan niet luisteren op {listen}: {e}"))
     })?;
     // Après une mise à jour : la nouvelle version confirme qu'elle répond, ou laisse la place.
     crate::update::confirm_pending(listen);

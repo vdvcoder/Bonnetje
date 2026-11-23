@@ -48,12 +48,12 @@ impl Planet {
 
     fn name(self) -> &'static str {
         match self {
-            Planet::Mercury => i18n::t("Mercure", "Mercury"),
-            Planet::Venus => i18n::t("Vénus", "Venus"),
-            Planet::Earth => i18n::t("Terre", "Earth"),
+            Planet::Mercury => i18n::t("Mercure", "Mercury", "Mercurius"),
+            Planet::Venus => i18n::t("Vénus", "Venus", "Venus"),
+            Planet::Earth => i18n::t("Terre", "Earth", "Aarde"),
             Planet::Mars => "Mars",
             Planet::Jupiter => "Jupiter",
-            Planet::Saturn => i18n::t("Saturne", "Saturn"),
+            Planet::Saturn => i18n::t("Saturne", "Saturn", "Saturnus"),
         }
     }
 
@@ -165,7 +165,7 @@ fn fetch_tle(ctx: &Ctx) -> Result<Tle> {
         .get("https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE")
         .header("User-Agent", concat!("printr/", env!("CARGO_PKG_VERSION")))
         .call()
-        .context(i18n::t("CelesTrak injoignable", "CelesTrak unreachable"))?
+        .context(i18n::t("CelesTrak injoignable", "CelesTrak unreachable", "CelesTrak onbereikbaar"))?
         .body_mut()
         .read_to_string()?;
     let lines: Vec<&str> = text.lines().map(str::trim).collect();
@@ -260,17 +260,17 @@ pub fn build(ctx: &Ctx, location: &str) -> Result<Doc> {
     let place = super::weather::locate(&ctx.http, location)?;
     let (lat, lon) = (place.latitude, place.longitude);
     let mut doc = Doc::new();
-    doc.header(&tr!("Le ciel ce soir · {}", "Tonight's sky · {}", place.name));
+    doc.header(&tr!("Le ciel ce soir · {}", "Tonight's sky · {}", "De hemel vanavond · {}", place.name));
 
     let Some(dark) = dusk(ctx.today, lat, lon) else {
         doc.feed(1);
         doc.text(
-            i18n::t("La nuit ne tombe pas vraiment ce soir.", "It does not really get dark tonight."),
+            i18n::t("La nuit ne tombe pas vraiment ce soir.", "It does not really get dark tonight.", "Het wordt vanavond niet echt donker."),
             Style::default().center(),
         );
         return Ok(doc);
     };
-    doc.text(&tr!("Nuit noire vers {}", "Dark from about {}", clock(dark)), Style::default().small().center());
+    doc.text(&tr!("Nuit noire vers {}", "Dark from about {}", "Donker vanaf ongeveer {}", clock(dark)), Style::default().small().center());
 
     // Planètes, une demi-heure après la tombée de la nuit (et pas avant 21 h).
     let nine = Local
@@ -289,14 +289,14 @@ pub fn build(ctx: &Ctx, location: &str) -> Result<Doc> {
         .filter(|&(_, alt, _)| alt > 8.0)
         .collect();
     doc.feed(1);
-    doc.text(&tr!("Planètes vers {}", "Planets around {}", clock(at)), Style::default().bold().underline());
+    doc.text(&tr!("Planètes vers {}", "Planets around {}", "Planeten rond {}", clock(at)), Style::default().bold().underline());
     if visible.is_empty() {
-        doc.text(i18n::t("Aucune planète bien placée.", "No planet well placed."), Style::default());
+        doc.text(i18n::t("Aucune planète bien placée.", "No planet well placed.", "Geen planeet goed zichtbaar."), Style::default());
     }
     for (p, alt, az) in visible {
         doc.hanging(
             &format!("{:<9}", p.name()),
-            &tr!("{}, à {:.0}°", "{}, {:.0}° up", direction(az), alt),
+            &tr!("{}, à {:.0}°", "{}, {:.0}° up", "{}, {:.0}° hoog", direction(az), alt),
             Style::default(),
         );
     }
@@ -304,22 +304,22 @@ pub fn build(ctx: &Ctx, location: &str) -> Result<Doc> {
     // ISS : toute la nuit, de la nuit noire au petit matin (ses passages visibles alternent entre le
     // soir et l'aube selon les semaines).
     doc.feed(1);
-    doc.text(i18n::t("Station spatiale (ISS)", "Space station (ISS)"), Style::default().bold().underline());
+    doc.text(i18n::t("Station spatiale (ISS)", "Space station (ISS)", "Ruimtestation (ISS)"), Style::default().bold().underline());
     match fetch_tle(ctx).and_then(|tle| iss_passes(&tle, dark, 13, lat, lon)) {
         Ok(passes) if passes.is_empty() => {
-            doc.text(i18n::t("Pas de passage visible cette nuit.", "No visible pass tonight."), Style::default());
+            doc.text(i18n::t("Pas de passage visible cette nuit.", "No visible pass tonight.", "Vannacht geen zichtbare overvlucht."), Style::default());
         }
         Ok(passes) => {
             for p in passes {
                 // Après minuit : « demain 5 h 42 ».
                 let tomorrow = p.start.with_timezone(&Local).date_naive() > ctx.today;
-                let when = if tomorrow { tr!("Demain {}", "Tomorrow {}", clock(p.start)) } else { clock(p.start) };
-                let what = tr!("{}, jusqu'à {:.0}°", "{}, up to {:.0}°", path(p.from, p.to), p.max_altitude);
-                doc.text(&tr!("{when} : {what}", "{when}: {what}"), Style::default());
+                let when = if tomorrow { tr!("Demain {}", "Tomorrow {}", "Morgen {}", clock(p.start)) } else { clock(p.start) };
+                let what = tr!("{}, jusqu'à {:.0}°", "{}, up to {:.0}°", "{}, tot {:.0}°", path(p.from, p.to), p.max_altitude);
+                doc.text(&tr!("{when} : {what}", "{when}: {what}", "{when}: {what}"), Style::default());
             }
         }
         Err(e) => {
-            doc.text(&tr!("Passages indisponibles ({e:#}).", "Passes unavailable ({e:#})."), Style::default().small());
+            doc.text(&tr!("Passages indisponibles ({e:#}).", "Passes unavailable ({e:#}).", "Overvluchten niet beschikbaar ({e:#})."), Style::default().small());
         }
     };
 
@@ -328,14 +328,14 @@ pub fn build(ctx: &Ctx, location: &str) -> Result<Doc> {
     let age = super::moon::age(at);
     let lit = (1.0 - (2.0 * PI * age / super::moon::SYNODIC_MONTH).cos()) / 2.0 * 100.0;
     doc.hanging(
-        i18n::t("Lune : ", "Moon: "),
-        &tr!("{}, éclairée à {:.0} %", "{}, {:.0}% lit", super::moon::name(age).to_lowercase(), lit),
+        i18n::t("Lune : ", "Moon: ", "Maan: "),
+        &tr!("{}, éclairée à {:.0} %", "{}, {:.0}% lit", "{}, {:.0}% verlicht", super::moon::name(age).to_lowercase(), lit),
         Style::default(),
     );
     if let Some((name, peak)) = shower(ctx.today) {
         doc.hanging(
-            i18n::t("Étoiles filantes : ", "Shooting stars: "),
-            &tr!("{name}, pic le {}", "{name}, peak on {}", crate::i18n::day_month(peak)),
+            i18n::t("Étoiles filantes : ", "Shooting stars: ", "Vallende sterren: "),
+            &tr!("{name}, pic le {}", "{name}, peak on {}", "{name}, piek op {}", crate::i18n::day_month(peak)),
             Style::default(),
         );
     }
