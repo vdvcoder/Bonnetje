@@ -142,7 +142,8 @@ fn in_container() -> bool {
 
 pub fn settings() -> Option<Settings> {
     let env = |name| std::env::var(name).ok().filter(|v: &String| !v.trim().is_empty());
-    if env("PRINTR_UPDATE_CHECK").is_some_and(|v| matches!(v.trim(), "off" | "0" | "false" | "non")) {
+    // Bonnetje: geen updates van upstream Printr; alleen aan met PRINTR_UPDATE_CHECK=on.
+    if !env("PRINTR_UPDATE_CHECK").is_some_and(|v| matches!(v.trim(), "on" | "1" | "true" | "oui")) {
         return None;
     }
     let base = env("PRINTR_UPDATE_URL").unwrap_or_else(|| GITHUB_API.to_owned());
