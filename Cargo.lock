@@ -566,7 +566,6 @@ checksum = "61803da095bee82a81bb1a452ecc25d3b2f1416d1897eb86430c6159ef717c17"
 [[package]]
 name = "crosswords"
 version = "1.1.0"
-source = "git+https://github.com/XNinety9/CrossWords?tag=v1.1.0#9f50c6c6871d990197702573ac6b726c420edec4"
 
 [[package]]
 name = "crunchy"
