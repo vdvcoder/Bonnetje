@@ -1026,7 +1026,9 @@ fn handle(app: &App, request: &mut Request) -> Reply {
     if method == Method::Get {
         if let Some((body, content_type)) = asset(app, path) {
             return Reply { status: 200, content_type, body, headers: Vec::new(), note: String::new() }
-                .header("Content-Security-Policy", CSP.split_whitespace().collect::<Vec<_>>().join(" "));
+                .header("Content-Security-Policy", CSP.split_whitespace().collect::<Vec<_>>().join(" "))
+                // Na een update meteen de nieuwe app, niet een oude uit de browsercache.
+                .header("Cache-Control", "no-cache".to_owned());
         }
     } else if !guard::same_origin(header(request, "Origin"), header(request, "Host")) {
         return Reply::error(403, t("requête venue d'un autre site, refusée", "request from another site, refused", "verzoek van een andere site, geweigerd"));
