@@ -18,6 +18,7 @@ Het script:
 ]
 ```
 
+- bepaalt zelf de witruimte (`{"type": "feed", "lines": 1}`, `separator`);
 - stopt met exitcode 0 (anders wordt de laatste regel van stderr getoond) en is binnen 180 s klaar.
 
 Het draait als gebruiker `printr`, zonder toegang tot `/home`, behalve wat een drop-in toelaat

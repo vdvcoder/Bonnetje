@@ -1018,10 +1018,8 @@ impl Block {
             Block::Workout { level, number } => doc = workout::build(ctx.today, *level, *number)?,
             Block::Picto { shape, size, count } => doc = picto::build(*shape, *size, *count),
             Block::Custom { name } => {
-                for (i, block) in custom::blocks(name, ctx.today)?.iter().enumerate() {
-                    if i > 0 {
-                        doc.feed(1);
-                    }
+                // Witruimte bepaalt het script zelf (blokken `feed`, `separator`).
+                for block in custom::blocks(name, ctx.today)? {
                     doc.append(block.build(ctx)?);
                 }
             }
