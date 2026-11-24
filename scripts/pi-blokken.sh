@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Eenmalig, met sudo: map voor eigen blokken + healthstatus als eerste eigen blok.
+# Met sudo (opnieuw draaien mag): map voor eigen blokken, schrijfbaar vanuit de app, + healthstatus.
 #   sudo bash ~/Code/Bonnetje/scripts/pi-blokken.sh
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")/.." && pwd)
@@ -19,6 +19,8 @@ done
 install -d /etc/systemd/system/printr.service.d
 cat > /etc/systemd/system/printr.service.d/bonnetje-blokken.conf <<CONF
 [Service]
+# Eigen blokken bewaren vanuit de app.
+ReadWritePaths=$DIR
 ProtectHome=tmpfs
 BindReadOnlyPaths=$H/Code/healthstatus
 BindPaths=$H/.garminconnect

@@ -50,11 +50,19 @@ pub fn list() -> Vec<String> {
 
 /// Draait het script en leest de blokken die het teruggeeft.
 pub fn blocks(name: &str, today: NaiveDate) -> Result<Vec<Block>> {
+    check_name(name)?;
+    run(&dir().join(name), name, today)
+}
+
+fn check_name(name: &str) -> Result<()> {
     if !valid(name) {
         bail!("{}", tr!("nom de bloc invalide : {name}", "invalid block name: {name}", "ongeldige bloknaam: {name}"));
     }
-    let path = dir().join(name);
-    let mut child = Command::new(&path)
+    Ok(())
+}
+
+fn run(path: &std::path::Path, name: &str, today: NaiveDate) -> Result<Vec<Block>> {
+    let mut child = Command::new(path)
         .env("BONNETJE_LANG", i18n::lang().code())
         .env("BONNETJE_DATE", today.to_string())
         .current_dir(dir())
@@ -63,6 +71,7 @@ pub fn blocks(name: &str, today: NaiveDate) -> Result<Vec<Block>> {
         .stderr(Stdio::piped())
         .spawn()
         .with_context(|| tr!("impossible de lancer {}", "cannot start {}", "kan {} niet starten", path.display()))?;
+    let _ = name;
 
     let read = |pipe: Option<Box<dyn Read + Send>>| {
         std::thread::spawn(move || {
@@ -98,6 +107,97 @@ pub fn blocks(name: &str, today: NaiveDate) -> Result<Vec<Block>> {
     }
     parse(&stdout).with_context(|| tr!("réponse de {name} illisible", "unreadable output from {name}", "onleesbare uitvoer van {name}"))
 }
+
+// ---- Beheren vanuit de app (alleen beheerders) ----
+
+/// Code van een script; zonder shebang wordt het Python 3.
+fn with_shebang(code: &str) -> String {
+    let code = code.replace("\r\n", "\n");
+    if code.starts_with("#!") { code } else { format!("#!/usr/bin/env python3\n{code}") }
+}
+
+pub fn read(name: &str) -> Result<String> {
+    check_name(name)?;
+    Ok(std::fs::read_to_string(dir().join(name))?)
+}
+
+pub fn save(name: &str, code: &str) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    check_name(name)?;
+    let path = dir().join(name);
+    let tmp = dir().join(format!(".{name}.{}.tmp", std::process::id()));
+    std::fs::write(&tmp, with_shebang(code))
+        .with_context(|| tr!("impossible d'écrire dans {}", "cannot write to {}", "kan niet schrijven in {}", dir().display()))?;
+    std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o775))?;
+    std::fs::rename(&tmp, &path)?;
+    Ok(())
+}
+
+pub fn delete(name: &str) -> Result<()> {
+    check_name(name)?;
+    Ok(std::fs::remove_file(dir().join(name))?)
+}
+
+/// Draait nog niet bewaarde code (voorbeeld in de app) vanuit een tijdelijk bestand.
+pub fn try_code(code: &str, today: NaiveDate) -> Result<Vec<Block>> {
+    use std::os::unix::fs::PermissionsExt;
+    let path = std::env::temp_dir().join(format!("bonnetje-blok-{}-{}", std::process::id(), rand::random::<u32>()));
+    std::fs::write(&path, with_shebang(code))?;
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o700))?;
+    let result = run(&path, "voorbeeld", today);
+    let _ = std::fs::remove_file(&path);
+    result
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct Generated {
+    pub code: String,
+    pub uitleg: String,
+}
+
+/// Laat Claude een script schrijven (of een bestaand bijsturen) uit een beschrijving.
+pub fn generate(claude: &crate::claude::Claude, description: &str, code: Option<&str>, feedback: Option<&str>) -> Result<Generated> {
+    let mut prompt = format!("Wat het blok moet doen:\n{description}\n");
+    if let Some(code) = code.filter(|c| !c.trim().is_empty()) {
+        prompt.push_str(&format!("\nHuidige code:\n{code}\n"));
+    }
+    if let Some(feedback) = feedback.filter(|f| !f.trim().is_empty()) {
+        prompt.push_str(&format!("\nPas het aan:\n{feedback}\n"));
+    }
+    let schema = serde_json::json!({
+        "type": "object", "additionalProperties": false, "required": ["code", "uitleg"],
+        "properties": { "code": { "type": "string" }, "uitleg": { "type": "string" } }
+    });
+    claude.generate(GENERATE_SYSTEM, &prompt, schema, "medium")
+}
+
+const GENERATE_SYSTEM: &str = r#"You write "custom block" scripts for Bonnetje, a receipt-printer app (80 mm thermal printer,
+42 characters per line in the normal font, 56 in the small font). Write the script in Python 3 using only the standard
+library (urllib for web requests; no pip packages). It runs on a Raspberry Pi as an unprivileged user without access to
+/home, with environment variables BONNETJE_LANG (e.g. "nl") and BONNETJE_DATE (YYYY-MM-DD, the day being printed). It must
+finish within 3 minutes, print ONLY a JSON list of blocks on stdout (json.dumps(blocks, ensure_ascii=False)), and exit 0.
+On errors, print a short message to stderr and exit 1. Text on the receipt is in Dutch unless asked otherwise.
+
+Available block types (JSON objects with "type"):
+- {"type": "title", "text": "...", "size": 2}                       big centered title (size 1-3)
+- {"type": "text", "text": "...", "bold": false, "underline": false, "reverse": false, "small": false, "size": 1,
+   "align": "left"|"center"|"right"}                                 paragraph; "
+" starts a new line; a line that fits
+                                                                    the width keeps its spaces, so aligned columns work
+- {"type": "separator", "style": "-"}                                full-width line ("-", "=", "*", "~", "·")
+- {"type": "feed", "lines": 1}                                       blank lines
+- {"type": "qr", "data": "https://...", "size": 4, "caption": "..."} QR code
+- {"type": "date"}                                                   today's date as a heading
+- {"type": "todo", "title": "...", "items": ["...", "..."]}         checklist with boxes
+- {"type": "image", "url": "https://...png"}                         picture (dithered to black and white)
+- {"type": "weather", "location": "Gent", "days": 3}                 weather forecast
+- {"type": "quote"}, {"type": "word_of_the_day"}, {"type": "sudoku", "difficulty": "facile"|"moyen"|"difficile"}
+Blocks are printed one after another without extra spacing: use separator/feed for layout.
+Avoid emoji and characters outside Latin-1 (the printer cannot print them); use plain text, bold and reverse for emphasis.
+Make the layout look good on a narrow receipt: a title, short lines, aligned columns when showing figures.
+
+Return "code" (the complete script, starting with #!/usr/bin/env python3) and "uitleg" (one or two sentences in Dutch
+explaining what the block does and any assumption you made)."#;
 
 fn parse(json: &str) -> Result<Vec<Block>> {
     #[derive(serde::Deserialize)]

@@ -872,6 +872,20 @@ fn session_cookie(token: &str, https: bool) -> String {
 }
 
 #[derive(Deserialize)]
+struct GenerateBlock {
+    description: String,
+    #[serde(default)]
+    code: Option<String>,
+    #[serde(default)]
+    feedback: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct BlockCode {
+    code: String,
+}
+
+#[derive(Deserialize)]
 struct PrintRequest {
     ticket: Value,
     #[serde(default)]
@@ -1523,6 +1537,60 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             );
             Reply::ok(out).note(tr!("aperçu · {} blocs", "preview · {} blocks", "voorbeeld · {} blokken", reports.len()))
         }
+        // ---- Eigen blokken (Bonnetje): alleen de beheerder, want het is code die op de Pi draait ----
+        (_, ["api", "custom-blocks", ..]) if !user_id.as_deref().is_some_and(|me| app.lock_store().is_admin(me)) => {
+            Reply::error(403, t("réservé à l'administrateur", "administrator only", "alleen voor de beheerder"))
+        }
+        (Method::Get, ["api", "custom-blocks"]) => {
+            let blocks: Vec<Value> = crate::blocks::custom::list()
+                .into_iter()
+                .map(|name| json!({ "code": crate::blocks::custom::read(&name).unwrap_or_default(), "name": name }))
+                .collect();
+            Reply::ok(json!({ "dir": crate::blocks::custom::dir(), "blocks": blocks }))
+        }
+        (Method::Post, ["api", "custom-blocks", "generate"]) => {
+            let input: GenerateBlock = try_reply!(json_body(request));
+            let Some(claude) = crate::claude::Claude::from_env() else {
+                return Reply::error(503, crate::claude::missing());
+            };
+            match crate::blocks::custom::generate(&claude, &input.description, input.code.as_deref(), input.feedback.as_deref()) {
+                Ok(generated) => Reply::ok(json!(generated)).note(t("bloc écrit par Claude", "block written by Claude", "blok geschreven door Claude")),
+                Err(e) => Reply::error(502, format!("{e:#}")),
+            }
+        }
+        (Method::Post, ["api", "custom-blocks", "preview"]) => {
+            let input: BlockCode = try_reply!(json_body(request));
+            let ctx = Ctx::web(false);
+            let mut doc = crate::doc::Doc::new();
+            let mut error = None;
+            match crate::blocks::custom::try_code(&input.code, ctx.today) {
+                Ok(blocks) => {
+                    for block in blocks {
+                        match block.build(&ctx) {
+                            Ok(d) => {
+                                doc.append(d);
+                            }
+                            Err(e) => error = Some(format!("{}: {e:#}", block.label())),
+                        }
+                    }
+                }
+                Err(e) => error = Some(format!("{e:#}")),
+            }
+            let mut out = doc.to_json();
+            out["error"] = json!(error);
+            Reply::ok(out)
+        }
+        (Method::Put, ["api", "custom-blocks", name]) => {
+            let input: BlockCode = try_reply!(json_body(request));
+            match crate::blocks::custom::save(name, &input.code) {
+                Ok(()) => Reply::ok(json!({ "name": name })).note(tr!("bloc perso {name} enregistré", "custom block {name} saved", "eigen blok {name} bewaard")),
+                Err(e) => Reply::error(400, format!("{e:#}")),
+            }
+        }
+        (Method::Delete, ["api", "custom-blocks", name]) => match crate::blocks::custom::delete(name) {
+            Ok(()) => Reply::ok(json!({})).note(tr!("bloc perso {name} supprimé", "custom block {name} deleted", "eigen blok {name} verwijderd")),
+            Err(e) => Reply::error(400, format!("{e:#}")),
+        },
         (Method::Post, ["api", "print"]) => {
             let input: PrintRequest = try_reply!(json_body(request));
             let ticket = try_reply!(parse_ticket(&input.ticket));

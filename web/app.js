@@ -2347,6 +2347,88 @@ function HiddenBlocksSheet({ onClose }) {
   </${Sheet}>`;
 }
 
+
+// Eigen blokken (Bonnetje, beheerder): beschrijven → Claude schrijft het script → voorbeeld → bewaren.
+function CustomBlocksSheet({ onClose }) {
+  const [list, setList] = useState(null);
+  const [edit, setEdit] = useState(null); // { name, isNew, description, code, uitleg, feedback }
+  const [busy, setBusy] = useState('');
+  const [preview, setPreview] = useState(null);
+  const load = () => api('GET', '/api/custom-blocks').then((r) => {
+    setList(r.blocks);
+    SERVER.customBlocks = r.blocks.map((b) => b.name);
+  }).catch((e) => toast(e.message, 'error'));
+  useEffect(() => { load(); }, []);
+  const set = (patch) => setEdit((e) => ({ ...e, ...patch }));
+  const run = async (what, f) => {
+    setBusy(what);
+    try { await f(); } catch (e) { toast(e.message, 'error'); } finally { setBusy(''); }
+  };
+  const write = (feedback) => run('claude', async () => {
+    const r = await api('POST', '/api/custom-blocks/generate', { description: edit.description, code: edit.code || null, feedback: feedback || null });
+    set({ code: r.code, uitleg: r.uitleg, feedback: '' });
+    setPreview(null);
+  });
+  const tryIt = () => run('preview', async () => setPreview(await api('POST', '/api/custom-blocks/preview', { code: edit.code })));
+  const save = () => run('save', async () => {
+    await api('PUT', `/api/custom-blocks/${encodeURIComponent(edit.name)}`, { code: edit.code });
+    toast(T('Bloc enregistré', 'Block saved', 'Blok bewaard'), 'ok', '🧩');
+    setEdit(null); setPreview(null); load();
+  });
+  const remove = (name) => run('delete', async () => {
+    if (!confirmRemove(name)) return;
+    await api('DELETE', `/api/custom-blocks/${encodeURIComponent(name)}`);
+    load();
+  });
+  const validName = (n) => /^[a-z0-9_-]{1,40}$/.test(n || '');
+
+  if (!edit) {
+    return html`<${Sheet} title=${T('Blocs perso', 'Custom blocks', 'Eigen blokken')} onClose=${onClose} wide footer=${html`
+      <button class="btn secondary" onClick=${onClose}>${T('Fermer', 'Close', 'Sluiten')}</button>
+      <button class="btn primary grow" onClick=${() => setEdit({ name: '', isNew: true, description: '', code: '', uitleg: '', feedback: '' })}>
+        <${Icon} name="plus" /> ${T('Nouveau bloc', 'New block', 'Nieuw blok')}</button>`}>
+      <p class="muted" style="margin:0">${T(
+        'Un bloc perso est un petit script sur le Pi. Décris ton idée, Claude l’écrit, tu vérifies l’aperçu et tu l’enregistres. Ensuite il apparaît dans « Bloc perso ».',
+        'A custom block is a small script on the Pi. Describe your idea, Claude writes it, you check the preview and save it. It then shows up in “Custom block”.',
+        'Een eigen blok is een klein script op de Pi. Beschrijf je idee, Claude schrijft het, je bekijkt het voorbeeld en bewaart het. Daarna staat het bij "Eigen blok".',
+      )}</p>
+      ${list === null ? html`<p class="muted">…</p>` : list.length === 0 ? html`<p class="muted">${T('Aucun bloc perso.', 'No custom blocks yet.', 'Nog geen eigen blokken.')}</p>` : list.map((b) => html`
+        <div class="setting-card" key=${b.name}>
+          <span class="big-emoji" aria-hidden="true">🧩</span>
+          <span class="grow"><strong>${b.name}</strong></span>
+          <button class="btn secondary small" onClick=${() => setEdit({ name: b.name, isNew: false, description: '', code: b.code, uitleg: '', feedback: '' })}>${T('Modifier', 'Edit', 'Bewerken')}</button>
+          <button class="iconbtn danger" aria-label=${T('Supprimer', 'Delete', 'Verwijderen')} disabled=${!!busy} onClick=${() => remove(b.name)}><${Icon} name="trash" /></button>
+        </div>`)}
+    </${Sheet}>`;
+  }
+
+  const taken = edit.isNew && (list || []).some((b) => b.name === edit.name);
+  return html`<${Sheet} title=${edit.isNew ? T('Nouveau bloc perso', 'New custom block', 'Nieuw eigen blok') : edit.name} onClose=${onClose} wide footer=${html`
+    <button class="btn secondary" onClick=${() => { setEdit(null); setPreview(null); }}>${T('Retour', 'Back', 'Terug')}</button>
+    <button class="btn secondary" disabled=${!edit.code || !!busy} onClick=${tryIt}>${busy === 'preview' ? '…' : T('Aperçu', 'Preview', 'Voorbeeld')}</button>
+    <button class="btn primary grow" disabled=${!edit.code || !validName(edit.name) || taken || !!busy} onClick=${save}><${Icon} name="check" /> ${T('Enregistrer', 'Save', 'Bewaren')}</button>`}>
+    ${edit.isNew && html`<${Field} label=${T('Nom', 'Name', 'Naam')}>
+      <input class="input" value=${edit.name} placeholder="bv. coach-weekend" onInput=${(e) => set({ name: e.target.value.toLowerCase() })} />
+      <span class="help">${taken ? T('Ce nom existe déjà.', 'This name already exists.', 'Deze naam bestaat al.') : T('Lettres minuscules, chiffres, - et _.', 'Lowercase letters, digits, - and _.', 'Kleine letters, cijfers, - en _.')}</span></${Field}>`}
+    <${Field} label=${T('Ton idée', 'Your idea', 'Je idee')}>
+      <textarea class="input" rows="4" value=${edit.description} placeholder=${T('Ex. : les matchs de foot du week-end…', 'E.g. this weekend’s football matches…', 'Bv. "Toon elke ochtend de afvalophaling van deze week en het weer in Gent, met een mooie titel."')}
+        onInput=${(e) => set({ description: e.target.value })}></textarea></${Field}>
+    <button class="btn primary" disabled=${!edit.description.trim() || !!busy} onClick=${() => write('')}>
+      ${busy === 'claude' ? T('Claude écrit…', 'Claude is writing…', 'Claude schrijft… (tot een minuut)') : edit.code ? T('✨ Réécrire avec Claude', '✨ Rewrite with Claude', '✨ Opnieuw laten schrijven') : T('✨ Écrire avec Claude', '✨ Write with Claude', '✨ Laat Claude het schrijven')}</button>
+    ${edit.uitleg && html`<p class="muted">${edit.uitleg}</p>`}
+    ${edit.code && html`
+      <div class="family-add">
+        <input class="input grow" value=${edit.feedback} placeholder=${T('Ajuster : « titre plus grand »…', 'Adjust: “bigger title”…', 'Bijsturen: "grotere titel", "ook de temperatuur"…')} onInput=${(e) => set({ feedback: e.target.value })} />
+        <button class="btn secondary" disabled=${!edit.feedback.trim() || !!busy} onClick=${() => write(edit.feedback)}>${T('Ajuster', 'Adjust', 'Bijsturen')}</button>
+      </div>
+      <${Field} label=${T('Code (Python)', 'Code (Python)', 'Code (Python)')}>
+        <textarea class="input code" spellcheck=${false} value=${edit.code} onInput=${(e) => { set({ code: e.target.value }); setPreview(null); }}></textarea></${Field}>`}
+    ${preview && preview.error && html`<p style="color:var(--danger)">${preview.error}</p>`}
+    ${preview && html`<div class="message-preview" style="display:block"><${Paper} preview=${preview} loading=${false} /></div>`}
+  </${Sheet}>`;
+}
+const confirmRemove = (name) => confirm(T(`Supprimer le bloc ${name} ?`, `Delete block ${name}?`, `Blok ${name} verwijderen?`));
+
 // Réglages du serveur (administrateur) : ce que fixe /etc/printr.env reste en lecture seule.
 const LOCKED_HINT = T('Fixé dans /etc/printr.env', 'Set in /etc/printr.env', 'Ingesteld in /etc/printr.env');
 const randomToken = () => [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -2511,6 +2593,7 @@ function AccountSheet({ me, users, version, update, paper, reloadUsers, onLogout
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const [picking, setPicking] = useState(false);
+  const [customs, setCustoms] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const run = async (fn) => { setBusy(true); try { await fn(); } catch (e) { toast(e.message, 'error'); } finally { setBusy(false); } };
   const add = (e) => { e.preventDefault(); run(async () => {
@@ -2570,7 +2653,12 @@ function AccountSheet({ me, users, version, update, paper, reloadUsers, onLogout
         <span class="big-emoji" aria-hidden="true">⚙️</span>
         <span class="grow"><strong>${T('Réglages', 'Settings', 'Instellingen')}</strong>
           <span class="muted">${T('Imprimante, langue, ville, Claude, Home Assistant…', 'Printer, language, city, Claude, Home Assistant…', 'Printer, taal, stad, Claude, Home Assistant…')}</span></span>
-        <${Icon} name="sliders" size=${18} /></button>`}
+        <${Icon} name="sliders" size=${18} /></button>
+      <button type="button" class="setting-card" onClick=${() => setCustoms(true)}>
+        <span class="big-emoji" aria-hidden="true">✨</span>
+        <span class="grow"><strong>${T('Blocs perso', 'Custom blocks', 'Eigen blokken')}</strong>
+          <span class="muted">${T('Décris une idée, Claude écrit le bloc', 'Describe an idea, Claude writes the block', 'Beschrijf een idee, Claude maakt het blok')}</span></span>
+        <${Icon} name="plus" size=${18} /></button>`}
 
     ${me.admin && html`<div class="setting-card paper-card backup-card">
         <span class="big-emoji" aria-hidden="true">📦</span>
@@ -2601,6 +2689,7 @@ function AccountSheet({ me, users, version, update, paper, reloadUsers, onLogout
     ${version && html`<p class="version">printr ${version}</p>`}
     ${confirm && html`<${Confirm} ...${confirm} onClose=${() => setConfirm(null)} />`}
     ${picking && html`<${HiddenBlocksSheet} onClose=${() => setPicking(false)} />`}
+    ${customs && html`<${CustomBlocksSheet} onClose=${() => setCustoms(false)} />`}
     ${settingsOpen && html`<${SettingsSheet} onClose=${() => setSettingsOpen(false)} />`}
   </${Sheet}>`;
 }

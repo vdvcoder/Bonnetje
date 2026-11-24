@@ -1017,6 +1017,15 @@ impl Block {
             Block::Riddle { kind, number, answer } => doc = riddle::build(ctx.today, *kind, *number, *answer)?,
             Block::Workout { level, number } => doc = workout::build(ctx.today, *level, *number)?,
             Block::Picto { shape, size, count } => doc = picto::build(*shape, *size, *count),
+            Block::Custom { name } if ctx.preview => {
+                // Een script kan traag zijn of Claude aanroepen: in het voorbeeld niet uitvoeren.
+                doc.header(&format!("{} · {name}", i18n::t("Bloc perso", "Custom block", "Eigen blok")));
+                doc.feed(1);
+                doc.text(
+                    i18n::t("Exécuté au moment de l'impression.", "Runs when printing.", "Wordt uitgevoerd bij het afdrukken."),
+                    Style::default().center(),
+                );
+            }
             Block::Custom { name } => {
                 // Witruimte bepaalt het script zelf (blokken `feed`, `separator`).
                 for block in custom::blocks(name, ctx.today)? {
