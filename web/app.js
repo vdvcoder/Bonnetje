@@ -2411,7 +2411,7 @@ function CustomBlocksSheet({ onClose }) {
       <input class="input" value=${edit.name} placeholder="bv. coach-weekend" onInput=${(e) => set({ name: e.target.value.toLowerCase() })} />
       <span class="help">${taken ? T('Ce nom existe déjà.', 'This name already exists.', 'Deze naam bestaat al.') : T('Lettres minuscules, chiffres, - et _.', 'Lowercase letters, digits, - and _.', 'Kleine letters, cijfers, - en _.')}</span></${Field}>`}
     <${Field} label=${T('Ton idée', 'Your idea', 'Je idee')}>
-      <textarea class="input" rows="4" value=${edit.description} placeholder=${T('Ex. : les matchs de foot du week-end…', 'E.g. this weekend’s football matches…', 'Bv. "Toon elke ochtend de afvalophaling van deze week en het weer in Gent, met een mooie titel."')}
+      <textarea class="input" rows="4" value=${edit.description} placeholder=${T('Ex. : les matchs de foot du week-end…', 'E.g. this weekend’s football matches…', 'Bv. "Toon elke ochtend de afvalophaling van deze week en het weer in Kortemark, met een mooie titel."')}
         onInput=${(e) => set({ description: e.target.value })}></textarea></${Field}>
     <button class="btn primary" disabled=${!edit.description.trim() || !!busy} onClick=${() => write('')}>
       ${busy === 'claude' ? T('Claude écrit…', 'Claude is writing…', 'Claude schrijft… (tot een minuut)') : edit.code ? T('✨ Réécrire avec Claude', '✨ Rewrite with Claude', '✨ Opnieuw laten schrijven') : T('✨ Écrire avec Claude', '✨ Write with Claude', '✨ Laat Claude het schrijven')}</button>
@@ -2515,7 +2515,7 @@ function SettingsSheet({ onClose }) {
 
     <div class="section-title">${T('Général', 'General', 'Algemeen')}</div>
     ${choice('PRINTR_LANG', T('Langue', 'Language', 'Taal'), [['nl', 'Nederlands'], ['fr', 'Français'], ['en', 'English']])}
-    ${text('PRINTR_CITY', T('Ville', 'City', 'Stad'), T('Météo, qualité de l’air et horaires du soleil, sauf si le bloc en précise une.', 'Weather, air quality and sun times, unless the block sets one.', 'Weer, luchtkwaliteit en zonnetijden, tenzij het blok er een instelt.'), T('Ex. Bordeaux', 'E.g. Boston', 'Bv. Gent'))}
+    ${text('PRINTR_CITY', T('Ville', 'City', 'Stad'), T('Météo, qualité de l’air et horaires du soleil, sauf si le bloc en précise une.', 'Weather, air quality and sun times, unless the block sets one.', 'Weer, luchtkwaliteit en zonnetijden, tenzij het blok er een instelt.'), T('Ex. Bordeaux', 'E.g. Boston', 'Bv. Kortemark'))}
     ${choice('PRINTR_UNITS', T('Unités de la météo', 'Weather units', 'Eenheden weer'), [['', T('°C et km/h', '°C and km/h', '°C en km/u')], ['imperial', T('°F et mph', '°F and mph', '°F en mph')]])}
 
     <div class="section-title">${T('Imprimante', 'Printer', 'Printer')}</div>
@@ -2883,7 +2883,7 @@ function Wizard({ me, onDone }) {
       ? html`<p class="muted">${T(`La ville est réglée par le système : ${city}.`, `The city is set by the system: ${city}.`, `De stad wordt door het systeem ingesteld: ${city}.`)}</p>`
       : html`<${Field} help=${T('Pour la météo, la qualité de l’air et les horaires du soleil. Tu pourras la changer dans chaque bloc.',
           'For the weather, air quality and sun times. You can change it in each block.', 'Voor het weer, de luchtkwaliteit en de zonnetijden. Je kunt het in elk blok aanpassen.')}>
-          <input class="input" placeholder=${T('Ex. Bordeaux', 'E.g. Boston', 'Bv. Gent')} value=${city} onInput=${(e) => set('PRINTR_CITY', e.target.value)} /></${Field}>`;
+          <input class="input" placeholder=${T('Ex. Bordeaux', 'E.g. Boston', 'Bv. Kortemark')} value=${city} onInput=${(e) => set('PRINTR_CITY', e.target.value)} /></${Field}>`;
   } else if (step.id === 'claude') {
     body = settings.ANTHROPIC_API_KEY?.set
       ? html`<p class="muted">✅ ${T('Claude est déjà configuré : histoires, horoscope, recettes et mot du jour sont disponibles.',

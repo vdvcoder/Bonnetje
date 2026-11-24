@@ -6,7 +6,7 @@ In de app kies je het via **Eigen blok**; de keuzelijst toont alle scripts uit d
 Het script:
 
 - heeft een naam van kleine letters, cijfers, `-` of `_` en is uitvoerbaar (`chmod +x`);
-- krijgt `BONNETJE_LANG` (`nl`) en `BONNETJE_DATE` (`2026-11-24`) mee;
+- krijgt `BONNETJE_LANG` (`nl`), `BONNETJE_DATE` (`2026-11-24`) en `BONNETJE_CITY` (de stad uit de instellingen) mee;
 - print op stdout een JSON-lijst met gewone blokken, bijvoorbeeld:
 
 ```json

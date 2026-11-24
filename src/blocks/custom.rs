@@ -4,7 +4,8 @@
 //!
 //! Contract van een script `<map>/<naam>`:
 //! - naam: kleine letters, cijfers, `-` en `_` (max. 40 tekens), uitvoerbaar;
-//! - omgeving: `BONNETJE_LANG` (`nl`, `en`, `fr`) en `BONNETJE_DATE` (`2026-11-24`);
+//! - omgeving: `BONNETJE_LANG` (`nl`, `en`, `fr`), `BONNETJE_DATE` (`2026-11-24`) en `BONNETJE_CITY`
+//!   (de stad uit de instellingen, bv. `Kortemark`);
 //! - stdout: een JSON-lijst van blokken (`[{"type": "title", "text": "…"}, …]`) of
 //!   `{"blocks": […]}`, met dezelfde bloktypes als een ticket (geen eigen blok erin);
 //! - exitcode 0; anders wordt de laatste regel van stderr de foutmelding;
@@ -65,6 +66,7 @@ fn run(path: &std::path::Path, name: &str, today: NaiveDate) -> Result<Vec<Block
     let mut child = Command::new(path)
         .env("BONNETJE_LANG", i18n::lang().code())
         .env("BONNETJE_DATE", today.to_string())
+        .env("BONNETJE_CITY", std::env::var("PRINTR_CITY").unwrap_or_default())
         .current_dir(dir())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -174,7 +176,9 @@ pub fn generate(claude: &crate::claude::Claude, description: &str, code: Option<
 const GENERATE_SYSTEM: &str = r#"You write "custom block" scripts for Bonnetje, a receipt-printer app (80 mm thermal printer,
 42 characters per line in the normal font, 56 in the small font). Write the script in Python 3 using only the standard
 library (urllib for web requests; no pip packages). It runs on a Raspberry Pi as an unprivileged user without access to
-/home, with environment variables BONNETJE_LANG (e.g. "nl") and BONNETJE_DATE (YYYY-MM-DD, the day being printed). It must
+/home, with environment variables BONNETJE_LANG (e.g. "nl"), BONNETJE_DATE (YYYY-MM-DD, the day being printed) and
+BONNETJE_CITY (the user's home town from the settings, e.g. "Kortemark"; use it whenever a place is needed and the idea does
+not name one: never invent a city; for coordinates use the free geocoding API of open-meteo). It must
 finish within 3 minutes, print ONLY a JSON list of blocks on stdout (json.dumps(blocks, ensure_ascii=False)), and exit 0.
 On errors, print a short message to stderr and exit 1. Text on the receipt is in Dutch unless asked otherwise.
 
@@ -190,7 +194,7 @@ Available block types (JSON objects with "type"):
 - {"type": "date"}                                                   today's date as a heading
 - {"type": "todo", "title": "...", "items": ["...", "..."]}         checklist with boxes
 - {"type": "image", "url": "https://...png"}                         picture (dithered to black and white)
-- {"type": "weather", "location": "Gent", "days": 3}                 weather forecast
+- {"type": "weather", "days": 3}                                    weather forecast for BONNETJE_CITY ("location" for another place)
 - {"type": "quote"}, {"type": "word_of_the_day"}, {"type": "sudoku", "difficulty": "facile"|"moyen"|"difficile"}
 Blocks are printed one after another without extra spacing: use separator/feed for layout.
 Avoid emoji and characters outside Latin-1 (the printer cannot print them); use plain text, bold and reverse for emphasis.
