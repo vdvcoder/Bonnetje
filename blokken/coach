@@ -1,5 +1,5 @@
 #!/bin/sh
-# Eigen blok: health status (Garmin-status, workout van vandaag en Claude-advies).
+# Eigen blok: coach-bon (stoplicht uit Garmin-gegevens, workout van vandaag en Claude-advies).
 # Het script zelf staat in ~/Code/healthstatus; Bonnetje mag die map alleen lezen
 # (drop-in van scripts/pi-blokken.sh) en de Garmin-tokens bijwerken.
 exec /home/olivier/Code/healthstatus/venv/bin/python /home/olivier/Code/healthstatus/healthstatus.py --blocks
