@@ -5,6 +5,7 @@ mod air_quality;
 mod anagram;
 mod arrow_word;
 pub mod barnum;
+pub mod custom;
 mod bins;
 mod birthdays;
 mod chess;
@@ -336,6 +337,10 @@ pub enum Block {
     Sun {
         #[serde(default)]
         location: String,
+    },
+    /// Eigen blok (Bonnetje): een script in `PRINTR_BLOCKS_DIR` dat blokken teruggeeft.
+    Custom {
+        name: String,
     },
     /// Horoscope hors ligne et gratuit, calculé sur le ciel réel par Barnum.
     Barnum {
@@ -789,6 +794,7 @@ impl Block {
             Block::Workout { .. } => i18n::t("défi sportif", "workout", "work-out"),
             Block::Picto { .. } => i18n::t("pictogramme", "pictogram", "pictogram"),
             Block::Barnum { .. } => i18n::t("horoscope Barnum", "Barnum horoscope", "Barnum-horoscoop"),
+            Block::Custom { .. } => i18n::t("bloc perso", "custom block", "eigen blok"),
             Block::News { .. } => i18n::t("actualités", "news", "nieuws"),
         }
     }
@@ -861,6 +867,7 @@ impl Block {
             Block::News { title, .. } => Some(title.clone()),
             Block::Workout { level, .. } => Some(level.label().to_owned()),
             Block::Picto { shape, .. } => Some(shape.label().to_owned()),
+            Block::Custom { name } => Some(name.clone()),
             Block::Barnum { sign, birth_date, .. } => {
                 birth_date.map(|d| tr!("né le {d}", "born {d}", "geboren op {d}")).or_else(|| sign.clone())
             }
@@ -1010,6 +1017,14 @@ impl Block {
             Block::Riddle { kind, number, answer } => doc = riddle::build(ctx.today, *kind, *number, *answer)?,
             Block::Workout { level, number } => doc = workout::build(ctx.today, *level, *number)?,
             Block::Picto { shape, size, count } => doc = picto::build(*shape, *size, *count),
+            Block::Custom { name } => {
+                for (i, block) in custom::blocks(name, ctx.today)?.iter().enumerate() {
+                    if i > 0 {
+                        doc.feed(1);
+                    }
+                    doc.append(block.build(ctx)?);
+                }
+            }
             Block::Barnum { sign, birth_date, sky, variant } => {
                 let who = match (birth_date, sign) {
                     (Some(birth), _) => barnum::Who::Birth(*birth),

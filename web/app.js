@@ -224,7 +224,7 @@ const EVERY = [
 ];
 
 // Réglages du serveur utiles à l'appli, relus avec /api/status.
-const SERVER = { mqtt: null, autoUpdate: false, lastUpdate: null, city: null };
+const SERVER = { mqtt: null, autoUpdate: false, lastUpdate: null, city: null, customBlocks: [] };
 // Champ « Ville » des blocs à lieu (météo, air, soleil, ciel) : vide, c'est la ville des réglages.
 const cityField = () => ({
   key: 'location', label: T('Ville', 'City', 'Stad'), kind: 'text',
@@ -340,6 +340,19 @@ const BLOCKS = [
       { key: 'sky', label: T("Afficher le ciel du jour", "Show today's sky", "Toon de hemel van vandaag"), kind: 'toggle', help: T('La position des planètes, et celles qui sont rétrogrades.', 'The position of the planets, and which ones are retrograde.', 'De positie van de planeten en welke retrograde zijn.') },
     ],
     summary: (b) => (b.birth_date ? T(`Né le ${b.birth_date}`, `Born on ${b.birth_date}`, `Geboren op ${b.birth_date}`) : label(SIGNS, b.sign)),
+  },
+  {
+    type: 'custom', label: T('Bloc perso', 'Custom block', 'Eigen blok'), emoji: '🧩', group: G.org,
+    desc: T('Un script à toi dans /opt/bonnetje/blokken', 'Your own script in /opt/bonnetje/blokken', 'Je eigen script in /opt/bonnetje/blokken'),
+    get defaults() { return { name: SERVER.customBlocks[0] || '' }; },
+    fields: [
+      {
+        key: 'name', label: T('Script', 'Script', 'Script'), kind: 'select',
+        get options() { return SERVER.customBlocks.length ? SERVER.customBlocks.map((n) => [n, n]) : [['', T('Aucun script trouvé', 'No script found', 'Geen script gevonden')]]; },
+        help: T('Un fichier exécutable qui affiche des blocs en JSON.', 'An executable file that prints blocks as JSON.', 'Een uitvoerbaar bestand dat blokken als JSON afdrukt.'),
+      },
+    ],
+    summary: (b) => b.name || '',
   },
   {
     type: 'horoscope', label: T('Horoscope Claude', 'Claude horoscope', 'Claude-horoscoop'), emoji: '🔮', group: G.daily, desc: T('Sérieux, farfelu… ou insultant', 'Serious, silly… or insulting', 'Serieus, gek… of beledigend'), ai: true,
@@ -2862,6 +2875,7 @@ function App() {
       CATALOG.claude = !!s.claude;
       SERVER.mqtt = s.mqtt_prefix || null;
       SERVER.city = s.city || null;
+      SERVER.customBlocks = s.custom_blocks || [];
       SERVER.autoUpdate = !!s.auto_update;
       SERVER.lastUpdate = s.last_update || null;
       setPrinter((before) => {

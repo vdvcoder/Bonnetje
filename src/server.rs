@@ -1320,6 +1320,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                 "auto_update": crate::update::auto_installs(),
                 "last_update": crate::update::last_update().map(|(from, to, at)| json!({ "from": from, "to": to, "at": at })),
                 "city": std::env::var("PRINTR_CITY").ok().filter(|c| !c.trim().is_empty()),
+                "custom_blocks": crate::blocks::custom::list(),
                 "wizard": user_id.as_deref().is_some_and(|me| {
                     let store = app.lock_store();
                     store.data.wizard_pending && store.is_admin(me)
