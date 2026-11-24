@@ -125,7 +125,13 @@ impl Doc {
                 ops.push(Op::Feed(1));
                 continue;
             }
-            for (i, line) in wrap(paragraph, width).into_iter().enumerate() {
+            // Een regel die past, blijft zoals ze is: spaties voor kolommen gaan niet verloren.
+            let lines = if paragraph.chars().count() <= width {
+                vec![paragraph.trim_end().to_owned()]
+            } else {
+                wrap(paragraph, width)
+            };
+            for (i, line) in lines.into_iter().enumerate() {
                 let lead = if i == 0 { &prefix } else { &indent };
                 ops.push(Op::Line { text: format!("{lead}{line}"), style });
             }
