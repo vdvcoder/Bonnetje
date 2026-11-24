@@ -127,7 +127,7 @@ impl Doc {
             }
             // Een regel die past, blijft zoals ze is: spaties voor kolommen gaan niet verloren.
             let lines = if paragraph.chars().count() <= width {
-                vec![paragraph.trim_end().to_owned()]
+                vec![paragraph.to_owned()]
             } else {
                 wrap(paragraph, width)
             };
