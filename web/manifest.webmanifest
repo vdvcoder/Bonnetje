@@ -1,8 +1,8 @@
 {
-  "name": "Printr",
-  "short_name": "Printr",
-  "description": "Composer, imprimer et planifier des tickets sur l'imprimante de la maison.",
-  "lang": "fr",
+  "name": "Bonnetje",
+  "short_name": "Bonnetje",
+  "description": "Bonnetjes samenstellen, afdrukken en plannen op de printer van thuis.",
+  "lang": "nl",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f6f1e9",

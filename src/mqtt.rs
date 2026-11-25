@@ -1,5 +1,5 @@
 //! MQTT : les domotiques (Node-RED, Jeedom, Home Assistant…) impriment en publiant sur des sujets, et
-//! Printr y publie son état.
+//! Bonnetje y publie son état.
 //!
 //! Activé par `PRINTR_MQTT_URL` (`mqtt://utilisateur:motdepasse@hôte:1883`, ou `mqtts://` en TLS).
 //! Sujets, sous `PRINTR_MQTT_PREFIX` (`printr` par défaut) :
@@ -238,7 +238,7 @@ fn tls_config() -> Result<rustls::ClientConfig> {
         .with_no_client_auth())
 }
 
-/// Identifiant de client : un par machine, pour que deux Printr ne se déconnectent pas l'un l'autre.
+/// Identifiant de client : un par machine, pour que deux Bonnetje ne se déconnectent pas l'un l'autre.
 fn client_id() -> String {
     let host = std::fs::read_to_string("/proc/sys/kernel/hostname").unwrap_or_default();
     let host: String = host.trim().chars().filter(|c| c.is_ascii_alphanumeric() || *c == '-').collect();
@@ -332,7 +332,7 @@ fn connect(app: Arc<App>, options: MqttOptions, prefix: String) {
     });
     let node = crate::hass::node_id(&prefix);
     // Découverte coupée : on efface ce qu'une découverte passée a laissé, retenu, sur le broker, sinon
-    // Home Assistant garderait un appareil fantôme (à côté de celui de l'intégration Printr, par exemple).
+    // Home Assistant garderait un appareil fantôme (à côté de celui de l'intégration Bonnetje, par exemple).
     let cleanup = discovery.is_none().then(|| {
         let (forget, topics) = mpsc::channel::<String>();
         let client = client.clone();

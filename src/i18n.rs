@@ -51,7 +51,7 @@ pub fn lang() -> Lang {
 
 #[cfg(not(test))]
 fn from_env() -> Lang {
-    std::env::var("PRINTR_LANG").ok().as_deref().and_then(Lang::parse).unwrap_or(Lang::Fr)
+    std::env::var("PRINTR_LANG").ok().as_deref().and_then(Lang::parse).unwrap_or(Lang::Nl)
 }
 
 /// Les tests ne dépendent pas de l'environnement : français par défaut, `with_lang` pour l'anglais.

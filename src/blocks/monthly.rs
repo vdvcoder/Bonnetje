@@ -79,7 +79,7 @@ fn render(entries: &[HistoryEntry], first: NaiveDate, today: NaiveDate, now: Dat
     let month = i18n::month(first.month0()).to_owned();
 
     let mut doc = Doc::new();
-    doc.header(i18n::t("Printr · bilan du mois", "Printr · monthly report", "Bonnetje · maandrapport"));
+    doc.header(i18n::t("Bonnetje · bilan du mois", "Bonnetje · monthly report", "Bonnetje · maandrapport"));
     doc.feed(1);
     doc.text(&format!("{} {}", month.to_uppercase(), first.year()), Style::default().bold().center().size(2));
     let until = if today < first.checked_add_months(chrono::Months::new(1)).unwrap_or(today) && today >= first {

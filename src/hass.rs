@@ -1,4 +1,4 @@
-//! Découverte automatique Home Assistant (MQTT discovery) : Printr y apparaît tout seul comme un
+//! Découverte automatique Home Assistant (MQTT discovery) : Bonnetje y apparaît tout seul comme un
 //! appareil, avec ses capteurs (état, papier, file d'attente), un bouton « Nouveau rouleau », un
 //! champ pour imprimer un texte et un bouton par ticket enregistré et partagé.
 //!
@@ -24,7 +24,7 @@ pub fn discovery_prefix() -> Option<String> {
     }
 }
 
-/// Nœud de l'appareil, tiré du préfixe MQTT : deux Printr sur un même broker ont des préfixes
+/// Nœud de l'appareil, tiré du préfixe MQTT : deux Bonnetje sur un même broker ont des préfixes
 /// différents, donc deux appareils distincts.
 pub fn node_id(prefix: &str) -> String {
     prefix.chars().map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_lowercase() } else { '_' }).collect()
@@ -223,8 +223,8 @@ pub fn preset_entity(prefix: &str, preset: &PresetButton) -> Value {
 fn device(prefix: &str) -> Value {
     json!({
         "identifiers": [format!("printr_{}", node_id(prefix))],
-        "name": if prefix == "printr" { "Printr".to_owned() } else { format!("Printr ({prefix})") },
-        "manufacturer": "Printr",
+        "name": if prefix == "printr" { "Bonnetje".to_owned() } else { format!("Bonnetje ({prefix})") },
+        "manufacturer": "Bonnetje",
         "model": t("Imprimante à tickets", "Receipt printer", "Bonprinter"),
         "sw_version": env!("CARGO_PKG_VERSION"),
     })

@@ -1,8 +1,8 @@
 <p align="center"><a href="guide.fr.md">🇫🇷 Version française</a></p>
 
-# Printr guide
+# Bonnetje guide
 
-Everything about Printr: blocks, the web app, the HTTP API, MQTT, installation and development.
+Everything about Bonnetje: blocks, the web app, the HTTP API, MQTT, installation and development.
 For a quick overview, see the [README](../README.md).
 
 ## Quick start
@@ -259,7 +259,7 @@ raw API responses.
 
 ## Language
 
-Printr speaks French by default. Setting `PRINTR_LANG=en` (in `/etc/printr.env` for the service)
+Bonnetje speaks French by default. Setting `PRINTR_LANG=en` (in `/etc/printr.env` for the service)
 switches the whole installation to English: the web interface, the command line, messages and
 tickets. The language can also be picked on the first account's screen, or later in
 [the settings](#settings). Blocks with content (riddles, quotes, word searches, workouts, gift coupons…) have their
@@ -323,7 +323,7 @@ and to pick the language. A short wizard follows:
   <img src="tickets/en/test.png" alt="Test ticket with accented letters and the euro sign" width="250">
 </p>
 
-1. **The printer**: Printr lists the USB printers (`/dev/tm88`, `/dev/usb/lp*`) and the printers that
+1. **The printer**: Bonnetje lists the USB printers (`/dev/tm88`, `/dev/usb/lp*`) and the printers that
    answer on port 9100 on the local network; another address can be typed in. A test ticket checks
    it: if the accents come out as odd symbols, “No” prints it again with the other code page
    (PC850, for printers without PC858), and keeps the one that works.
@@ -357,7 +357,7 @@ the file's content; the current state is kept first in `backups/` next to the da
 and everyone signs in again.
 
 On a fresh installation, the first account's screen also offers to restore a backup (from the home
-network only, like the first account): a new microSD card, then the family's Printr as it was.
+network only, like the first account): a new microSD card, then the family's Bonnetje as it was.
 
 ### Data
 
@@ -409,7 +409,7 @@ to reach the Pi (same Wi-Fi, or a VPN such as Tailscale).
 ### Node-RED
 
 The [`node-red-contrib-printr`](https://www.npmjs.com/package/node-red-contrib-printr) package
-([source](https://github.com/XNinety9/node-red-contrib-printr)) adds Printr nodes to Node-RED. You only
+([source](https://github.com/XNinety9/node-red-contrib-printr)) adds Bonnetje nodes to Node-RED. You only
 give the address of the Pi and the token, never a route:
 
 | Node | Does |
@@ -442,14 +442,14 @@ PRINTR_MQTT_DISCOVERY=homeassistant                      # optional: Home Assist
 
 | Topic | Direction | Message |
 | --- | --- | --- |
-| `printr/print` | to Printr | a JSON ticket, or a text |
-| `printr/print/ticket` | to Printr | the name of a saved ticket (shared tickets only) |
-| `printr/todo` | to Printr | `{"title"?, "items"}`, or one item per line |
-| `printr/shopping` | to Printr | items for the shopping list, one per line |
-| `printr/paper/roll` | to Printr | a new roll is in (optional: its length in meters) |
-| `printr/result` | from Printr | the outcome of each message: `printed`, `queued`, `stalled`, `added` or `error` |
-| `printr/status` | from Printr, retained | `printer_ready`, `printer_status` (`ready`, `cover_open`, `paper_out`, `missing`), `stalled`, `queued`, `paper` (gauge: `remaining_mm`, `percent`, `low`…), `last_ticket`, `version` |
-| `printr/availability` | from Printr, retained | `online`, or `offline` when Printr goes away |
+| `printr/print` | to Bonnetje | a JSON ticket, or a text |
+| `printr/print/ticket` | to Bonnetje | the name of a saved ticket (shared tickets only) |
+| `printr/todo` | to Bonnetje | `{"title"?, "items"}`, or one item per line |
+| `printr/shopping` | to Bonnetje | items for the shopping list, one per line |
+| `printr/paper/roll` | to Bonnetje | a new roll is in (optional: its length in meters) |
+| `printr/result` | from Bonnetje | the outcome of each message: `printed`, `queued`, `stalled`, `added` or `error` |
+| `printr/status` | from Bonnetje, retained | `printer_ready`, `printer_status` (`ready`, `cover_open`, `paper_out`, `missing`), `stalled`, `queued`, `paper` (gauge: `remaining_mm`, `percent`, `low`…), `last_ticket`, `version` |
+| `printr/availability` | from Bonnetje, retained | `online`, or `offline` when Bonnetje goes away |
 
 ```sh
 mosquitto_pub -h 192.168.1.10 -t printr/print -m "Someone rang the doorbell"
@@ -458,19 +458,19 @@ mosquitto_pub -h 192.168.1.10 -t printr/print/ticket -m "Morning brief"
 
 The same rules as the HTTP API apply: at most 60 blocks, the hourly quota (prints show up as “MQTT” in
 the history), and the queue when the printer is away. MQTT has no token: **anyone allowed on the broker
-can print**, so restrict access on the broker (accounts, ACL). Messages sent while Printr is
+can print**, so restrict access on the broker (accounts, ACL). Messages sent while Bonnetje is
 disconnected are not kept: a morning brief does not come out in the evening.
 
 ### TLS certificates
 
 `mqtt://` (no TLS) works with any broker on your network. `mqtts://` checks the broker's certificate:
-that it is signed by a trusted authority, and that its name matches the address. Printr trusts the
-public authorities (Let's Encrypt, for example) by default. For your own certificate, give Printr the
-certificate with `PRINTR_MQTT_CA`: the check stays complete, Printr only accepts that certificate in
+that it is signed by a trusted authority, and that its name matches the address. Bonnetje trusts the
+public authorities (Let's Encrypt, for example) by default. For your own certificate, give Bonnetje the
+certificate with `PRINTR_MQTT_CA`: the check stays complete, Bonnetje only accepts that certificate in
 addition to the public ones.
 
 - **Without `PRINTR_MQTT_CA`**, a self-signed or private certificate is refused: the log shows
-  `MQTT … unreachable` with `UnknownIssuer`, and Printr keeps retrying in the background.
+  `MQTT … unreachable` with `UnknownIssuer`, and Bonnetje keeps retrying in the background.
 - **Self-signed broker certificate**: create it with `CA:FALSE`, otherwise it is refused even with
   `PRINTR_MQTT_CA` (`CaUsedAsEndEntity`). The name must match the address used in `PRINTR_MQTT_URL`:
 
@@ -479,7 +479,7 @@ addition to the public ones.
     -subj "/CN=192.168.1.200" -addext "subjectAltName=IP:192.168.1.200" -addext "basicConstraints=critical,CA:FALSE"
   ```
 
-  Give `mqtt-cert.pem` and `mqtt-key.pem` to the broker, and `mqtt-cert.pem` to Printr as `PRINTR_MQTT_CA`.
+  Give `mqtt-cert.pem` and `mqtt-key.pem` to the broker, and `mqtt-cert.pem` to Bonnetje as `PRINTR_MQTT_CA`.
   On a Mosquitto broker, the TLS listener is:
 
   ```text
@@ -489,46 +489,46 @@ addition to the public ones.
   ```
 
   Then use `PRINTR_MQTT_URL=mqtts://192.168.1.200:8883` (the address must be the one in the certificate).
-- **Private authority**: sign the broker certificate with your authority, and give Printr the
+- **Private authority**: sign the broker certificate with your authority, and give Bonnetje the
   authority's certificate as `PRINTR_MQTT_CA`.
 - **Never turn the check off**: the encryption would then protect nothing.
 
-Printr reads the file at startup, so restart the service after changing it. The file must be readable by
+Bonnetje reads the file at startup, so restart the service after changing it. The file must be readable by
 the `printr` user.
 
 ## Home Assistant
 
-Two ways to bring Printr into Home Assistant. **Pick one**: both create a Printr device.
+Two ways to bring Bonnetje into Home Assistant. **Pick one**: both create a Bonnetje device.
 
-| | Printr integration | MQTT discovery |
+| | Bonnetje integration | MQTT discovery |
 | --- | --- | --- |
 | Needs | the [integration by Matteo Penaud](https://github.com/Matteo-Penaud/printr-ha-integration) and the script token | an MQTT broker and Home Assistant's MQTT integration |
 | Printing | `printr.print_ticket`, `print_text`, `print_todo`, `print_states` actions; `notify.send_message` | a button per shared ticket, a "Print a text" field, `mqtt.publish` |
 | In Home Assistant | last print, tickets today, print failure, update available, the shopping list as a to-do list | printer status, paper left, paper almost out, queued tickets, last ticket, New roll button |
 
 The integration talks to the HTTP API: set a token (`PRINTR_TOKEN` in `/etc/printr.env`), then add the
-integration in *Settings → Devices & services* with the server's address and that token. If Printr is
+integration in *Settings → Devices & services* with the server's address and that token. If Bonnetje is
 also connected to MQTT for other uses, set `PRINTR_MQTT_DISCOVERY=off`, or Home Assistant gets a
-second Printr device.
+second Bonnetje device.
 
 ### With MQTT (discovery)
 
 With the [MQTT integration](https://www.home-assistant.io/integrations/mqtt/) set up on the same broker,
-Printr shows up by itself in Home Assistant as a **Printr** device (MQTT discovery), nothing to configure:
+Bonnetje shows up by itself in Home Assistant as a **Bonnetje** device (MQTT discovery), nothing to configure:
 
 - **sensors**: printer status (`ready`, `cover_open`, `paper_out`, `missing`), problem, paper left (%
   and meters), paper almost out, queued tickets, last ticket;
 - a **New roll** button, and a **Print a text** field;
 - **one button per shared ticket**, added, renamed or removed as the tickets change.
 
-Discovery uses the `homeassistant` prefix; `PRINTR_MQTT_DISCOVERY` changes it, or turns it `off`: Printr
+Discovery uses the `homeassistant` prefix; `PRINTR_MQTT_DISCOVERY` changes it, or turns it `off`: Bonnetje
 then removes the device it had announced, so it does not linger next to another integration.
-Two Printr on the same broker need different `PRINTR_MQTT_PREFIX` values: each one is its own device.
+Two Bonnetje on the same broker need different `PRINTR_MQTT_PREFIX` values: each one is its own device.
 
 **A ticket from the app in an automation**: in the composer, “Show the ticket configuration” (admin only)
 gives the ticket as YAML, ready to paste into an automation or a script (YAML mode), or as JSON for the
 HTTP API, MQTT and `printr print`. In YAML, two forms: the `printr.print_ticket` action of the
-integration, or the `mqtt.publish` action publishing the ticket on `printr/print`, offered when Printr
+integration, or the `mqtt.publish` action publishing the ticket on `printr/print`, offered when Bonnetje
 is connected to MQTT.
 
 ### Automation examples
@@ -590,7 +590,7 @@ triggers:
 actions:
   - action: notify.mobile_app_my_phone
     data:
-      message: "Printr is almost out of paper."
+      message: "Bonnetje is almost out of paper."
 ```
 
 Other ideas: a parcel delivered, a reminder to take a medicine, or a personal note for whoever walks
@@ -622,7 +622,7 @@ GitHub to see whether a newer version has been published, and reports it to the 
 action (`scripts/deploy.sh`), after reading what's new. `PRINTR_UPDATE_CHECK=off` turns the check off.
 
 **Automatic updates** are opt-in: the wizard offers them, and they can be turned on in the
-settings (`PRINTR_AUTO_UPDATE=auto`). Printr then installs a new release **only if it is signed**
+settings (`PRINTR_AUTO_UPDATE=auto`). Bonnetje then installs a new release **only if it is signed**
 with the maintainer's key, which never leaves the maintainer's computer: the signature covers the
 list of checksums (`SHA256SUMS`), and the downloaded program must match its checksum, run, and
 report the expected version. A compromised GitHub account therefore cannot push anything to the
@@ -730,7 +730,7 @@ uv run --with pillow python docs/brand/make-assets.py   # logo variants and app 
 
 ## Supported printers
 
-Printr speaks **ESC/POS** and lays tickets out for **80 mm paper**: 512 dots wide at 180 dpi, 42
+Bonnetje speaks **ESC/POS** and lays tickets out for **80 mm paper**: 512 dots wide at 180 dpi, 42
 columns in font A and 56 in font B, images sent as raster (`GS v 0`), the PC858 code page (accents
 and €), and the cutter (`GS V`). If accents are missing from prints (some clones lack code page 19), `PRINTR_CODEPAGE=850` selects PC850 (`ESC t 2`): `€` is then printed as “EUR”. On 80 mm printers at 203 dpi, whose print head is 576 dots wide, `PRINTR_PAPER_WIDTH=576` (also in the app's settings) uses the full width: 48 columns in font A, 64 in font B, and drawn blocks centered.
 
@@ -746,19 +746,19 @@ and €), and the cutter (`GS V`). If accents are missing from prints (some clon
 
 Three ways to reach the printer:
 
-- **USB**: `--device` (default `/dev/usb/lp0`, through the Linux `usblp` driver). Printr also reads
+- **USB**: `--device` (default `/dev/usb/lp0`, through the Linux `usblp` driver). Bonnetje also reads
   the printer's state there: cover open, out of paper, unplugged.
-- **Network**: `--tcp host:9100` (raw port of network printers). Printr only knows whether the printer
+- **Network**: `--tcp host:9100` (raw port of network printers). Bonnetje only knows whether the printer
   answers.
 - **File**: `--dump` writes the ESC/POS bytes, to test without a printer (see the
   [emulator](#testing-without-a-printer-emulator)).
 
-Tried Printr on another printer? Tell us in the [discussions](https://github.com/XNinety9/Printr/discussions), with
+Tried Bonnetje on another printer? Tell us in the [discussions](https://github.com/XNinety9/Printr/discussions), with
 what worked and what didn't: this table will grow with your feedback.
 
 ### Paper
 
-Printr uses ordinary **80 mm thermal paper** rolls; a roll 70 mm in diameter holds about 70 m. Most thermal
+Bonnetje uses ordinary **80 mm thermal paper** rolls; a roll 70 mm in diameter holds about 70 m. Most thermal
 paper relies on a chemical developer that reacts to heat: often **BPA** (bisphenol A), banned in
 thermal paper in the European Union since January 2020, and more and more **BPS**, its replacement,
 which is not banned and raises the same questions. Since this paper ends up in everyone's hands,
@@ -773,22 +773,22 @@ Two ways:
 - on a **Raspberry Pi**, the [ready-to-flash image](#ready-to-flash-image): nothing to install,
   even the Wi-Fi is set up from the phone;
 - on **any Linux machine**, Raspberry Pi included, the [install script](#install-script), which adds
-  Printr as a systemd service.
+  Bonnetje as a systemd service.
 
 ### Ready-to-flash image
 
 Each [release](https://github.com/XNinety9/Printr/releases) comes with an image for the Raspberry Pi
-3, 4, 5 and Zero 2 W (64-bit): Raspberry Pi OS Lite with Printr ready to use
+3, 4, 5 and Zero 2 W (64-bit): Raspberry Pi OS Lite with Bonnetje ready to use
 (`printr-X.Y.Z-raspberrypi-arm64.img.xz`).
 
 1. Write it to a microSD card with [Raspberry Pi Imager](https://www.raspberrypi.com/software/):
-   **Choose OS → Use custom**. Or have Printr listed in Imager itself: in its options, set the
+   **Choose OS → Use custom**. Or have Bonnetje listed in Imager itself: in its options, set the
    content repository to
    `https://github.com/XNinety9/Printr/releases/latest/download/printr-imager.json`. Its customization (gear icon) is optional: an account and SSH, to log
    in to the machine; the Wi-Fi, to skip the [first network connection](#first-network-connection).
 2. Plug in the printer over USB, and an Ethernet cable if there is one, then power on.
 3. On Ethernet, or with the Wi-Fi given to Imager, the app is at `http://printr.local` (or at the
-   address shown by the router). Otherwise, Printr prints a ticket to set up the Wi-Fi.
+   address shown by the router). Otherwise, Bonnetje prints a ticket to set up the Wi-Fi.
 
 The image serves the app on port 80, under the host name `printr`, with a French locale and
 keyboard, the Paris time zone and the FR Wi-Fi country (Imager changes them), Barnum for the
@@ -798,11 +798,11 @@ yourself: [image/README.md](../image/README.md).
 
 ### First network connection
 
-With no network a minute after power-on, Printr opens its own Wi-Fi, **Printr-XXXX**, and prints a
+With no network a minute after power-on, Bonnetje opens its own Wi-Fi, **Bonnetje-XXXX**, and prints a
 ticket:
 
 <p align="center">
-  <img src="tickets/en/wifi.png" alt="Ticket with two QR codes: join Printr's Wi-Fi, then open the setup page" width="250">
+  <img src="tickets/en/wifi.png" alt="Ticket with two QR codes: join Bonnetje's Wi-Fi, then open the setup page" width="250">
   &nbsp;
   <img src="shots/en/mobile-wifi.png" alt="Setup page: the Wi-Fi networks in range" width="250">
 </p>
@@ -810,15 +810,15 @@ ticket:
 1. Scan the first QR code to join that Wi-Fi (its password is printed below it).
 2. The setup page usually opens by itself, as on a hotel Wi-Fi; otherwise, scan the second QR code
    (`http://10.42.0.1`).
-3. Pick the home Wi-Fi and type its password: Printr joins it and prints a second ticket with the
+3. Pick the home Wi-Fi and type its password: Bonnetje joins it and prints a second ticket with the
    app's address. Put the phone back on the home Wi-Fi, and open that address.
 
-A wrong password? Printr says so on a new ticket and opens its Wi-Fi again, with the same name and
+A wrong password? Bonnetje says so on a new ticket and opens its Wi-Fi again, with the same name and
 password. That Wi-Fi is protected (WPA2) by the password on the ticket, which stays the same from
-one start to the next, and only exists while Printr has no network.
+one start to the next, and only exists while Bonnetje has no network.
 
 When the home Wi-Fi is already known but missing at startup (after a power cut, the router often
-restarts more slowly than the Pi), Printr waits five minutes before opening its own Wi-Fi, then
+restarts more slowly than the Pi), Bonnetje waits five minutes before opening its own Wi-Fi, then
 tries the home one again every five minutes. Some routers block `.local` names between Wi-Fi
 devices: the ticket gives the IP address first for that reason.
 
@@ -838,7 +838,7 @@ curl -fsSL https://xninety9.github.io/Printr/install.sh | bash
 It downloads the archive of the latest version for this machine, checks the release signature
 (the same keys as automatic updates, with `openssl`) and the archive's checksum, then runs its
 `install.sh`; the `sudo` password is asked once. The rest happens in the browser, with the
-[first launch](#first-launch) wizard. Running it again updates Printr.
+[first launch](#first-launch) wizard. Running it again updates Bonnetje.
 `curl … | bash -s -- --download-only` only downloads and checks.
 
 ### Install script
@@ -938,7 +938,7 @@ sudo deploy/install.sh --binary path/to/printr
 
 ### In a container (Docker)
 
-If the machine already runs its services in containers (Home Assistant, WireGuard…), Printr can join
+If the machine already runs its services in containers (Home Assistant, WireGuard…), Bonnetje can join
 them. [`deploy/Dockerfile`](../deploy/Dockerfile) and [`deploy/compose.yaml`](../deploy/compose.yaml)
 wrap the `printr` binary placed next to them, with Barnum, under an unprivileged user and the same
 safeguards as the systemd service. In a release archive, the binary is already there; from the
@@ -978,6 +978,6 @@ docker compose logs -f                     # follow the prints
 
 ## License
 
-Printr is licensed under the [Apache License 2.0](../LICENSE): you can reuse, modify and redistribute it,
+Bonnetje is licensed under the [Apache License 2.0](../LICENSE): you can reuse, modify and redistribute it,
 as long as you keep the [NOTICE](../NOTICE) file, which credits the original author and the bundled
 CrossWords library.

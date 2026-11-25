@@ -253,7 +253,7 @@ impl App {
 
     /// Verrouille les données, après les avoir relues si le fichier a changé sur le disque
     /// (compte créé en ligne de commande pendant que le serveur tourne, par exemple).
-    /// Imprime un ticket construit par Printr lui-même (configuration), sans historique.
+    /// Imprime un ticket construit par Bonnetje lui-même (configuration), sans historique.
     pub fn print_doc(&self, doc: &crate::doc::Doc) -> Result<()> {
         let bytes = crate::output::render(doc, true)?;
         let printer = self.printer.lock().unwrap_or_else(|e| e.into_inner());
@@ -711,33 +711,23 @@ fn asset(app: &App, path: &str) -> Option<(Vec<u8>, &'static str)> {
     Some((localize(name, bytes.to_vec()), content_type))
 }
 
-/// La page et le manifeste sont écrits en français ; en anglais, le serveur change `<html lang>`
-/// (l'interface s'en sert pour choisir sa langue) et les quelques textes vus avant son chargement.
+/// De pagina en het manifest zijn in het Nederlands geschreven; in het Engels vervangt de server
+/// `<html lang>` (de interface kiest er zijn taal mee) en de paar teksten die vóór het laden te zien zijn.
 fn localize(name: &str, bytes: Vec<u8>) -> Vec<u8> {
-    let lang = crate::i18n::lang();
-    if lang == crate::i18n::Lang::Fr || !matches!(name, "index.html" | "manifest.webmanifest") {
+    if crate::i18n::lang() != crate::i18n::Lang::En || !matches!(name, "index.html" | "manifest.webmanifest") {
         return bytes;
     }
-    let code = lang.code();
     let mut text = String::from_utf8_lossy(&bytes).into_owned();
-    for (fr, other) in [
-        (r#"<html lang="fr">"#.to_owned(), format!(r#"<html lang="{code}">"#)),
+    for (nl, en) in [
+        (r#"<html lang="nl">"#, r#"<html lang="en">"#),
         (
-            "Composer, imprimer et planifier des tickets sur l'imprimante de la maison.".to_owned(),
-            crate::i18n::t(
-                "",
-                "Compose, print and schedule tickets on the household receipt printer.",
-                "Bonnetjes samenstellen, afdrukken en plannen op de printer van thuis.",
-            )
-            .to_owned(),
+            "Bonnetjes samenstellen, afdrukken en plannen op de printer van thuis.",
+            "Compose, print and schedule tickets on the household receipt printer.",
         ),
-        (
-            "Printr a besoin de JavaScript.".to_owned(),
-            crate::i18n::t("", "Printr needs JavaScript.", "Bonnetje heeft JavaScript nodig.").to_owned(),
-        ),
-        (r#""lang": "fr""#.to_owned(), format!(r#""lang": "{code}""#)),
+        ("Bonnetje heeft JavaScript nodig.", "Bonnetje needs JavaScript."),
+        (r#""lang": "nl""#, r#""lang": "en""#),
     ] {
-        text = text.replace(&fr, &other);
+        text = text.replace(nl, en);
     }
     text.into_bytes()
 }
@@ -795,7 +785,7 @@ struct TestPrint {
 fn test_ticket_doc() -> crate::doc::Doc {
     use crate::doc::{Doc, Style};
     let mut doc = Doc::new();
-    doc.text("Printr", Style::default().bold().center().size(2));
+    doc.text("Bonnetje", Style::default().bold().center().size(2));
     doc.text(t("Ça marche !", "It works!", "Het werkt!"), Style::default().center());
     doc.feed(1);
     doc.text(t("Les accents doivent être lisibles :", "Accents should be readable:", "Accenten moeten leesbaar zijn:"), Style::default());
@@ -1115,7 +1105,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
                 Err(e) => Reply::error(400, format!("{e:#}")),
             };
         }
-        // Première connexion au réseau : sans compte au départ, depuis le point d'accès de Printr.
+        // Première connexion au réseau : sans compte au départ, depuis le point d'accès de Bonnetje.
         (Method::Get, ["api", "wifi"]) => {
             return match crate::wifi::describe() {
                 Some(state) => Reply::ok(state),
@@ -1128,7 +1118,7 @@ fn handle(app: &App, request: &mut Request) -> Reply {
             }
             // Sans compte, même sur une installation déjà utilisée (Wi-Fi changé, déménagement) : le
             // point d'accès est protégé par le mot de passe imprimé sur le ticket, il faut donc avoir
-            // l'imprimante sous la main. Et il n'existe que tant que Printr n'a pas de réseau.
+            // l'imprimante sous la main. Et il n'existe que tant que Bonnetje n'a pas de réseau.
             let input: WifiInput = try_reply!(json_body(request));
             return match crate::wifi::join(input.ssid.trim().to_owned(), input.password) {
                 Ok(()) => Reply::ok(json!({ "ok": true })).note(t("connexion au Wi-Fi", "joining the Wi-Fi", "verbinden met de Wi-Fi")),

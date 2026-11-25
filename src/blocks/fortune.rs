@@ -14,7 +14,7 @@ use crate::i18n;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Source {
-    /// La liste de Printr, en français ou en anglais.
+    /// La liste de Bonnetje, en français ou en anglais.
     #[default]
     #[serde(alias = "printr")]
     Builtin,

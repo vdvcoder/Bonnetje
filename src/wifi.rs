@@ -1,7 +1,7 @@
 //! Première connexion au réseau, pour l'image Raspberry Pi (`PRINTR_WIFI_SETUP=1`) : si la machine
-//! n'est reliée à aucun réseau au démarrage, Printr ouvre un point d'accès Wi-Fi « Printr-XXXX » et
+//! n'est reliée à aucun réseau au démarrage, Bonnetje ouvre un point d'accès Wi-Fi « Bonnetje-XXXX » et
 //! imprime un ticket pour s'y connecter. Depuis le téléphone, on choisit le Wi-Fi de la maison ;
-//! Printr le rejoint et imprime l'adresse de l'appli (ou, en cas d'échec, rouvre le point d'accès).
+//! Bonnetje le rejoint et imprime l'adresse de l'appli (ou, en cas d'échec, rouvre le point d'accès).
 //!
 //! Un Wi-Fi déjà connu mais absent (coupure de courant : le Pi redémarre avant la box) laisse plus
 //! de temps au démarrage, puis est retenté régulièrement pendant que le point d'accès est ouvert.
@@ -195,7 +195,7 @@ fn scan() -> Vec<Network> {
 fn hotspot_name() -> String {
     let id = std::fs::read_to_string("/etc/machine-id").unwrap_or_default();
     let suffix: String = id.trim().chars().filter(char::is_ascii_hexdigit).take(4).collect();
-    if suffix.len() == 4 { format!("Printr-{}", suffix.to_uppercase()) } else { "Printr".to_owned() }
+    if suffix.len() == 4 { format!("Bonnetje-{}", suffix.to_uppercase()) } else { "Bonnetje".to_owned() }
 }
 
 /// Le mot de passe du point d'accès : tiré une fois puis gardé avec les données, pour qu'un ancien
@@ -221,7 +221,7 @@ fn new_password() -> String {
     (0..10).map(|_| *PASSWORD_LETTERS.choose(&mut rng).unwrap() as char).collect()
 }
 
-/// Configuration de hostapd, écrite par Printr et lue par le service `printr-hotspot` de l'image.
+/// Configuration de hostapd, écrite par Bonnetje et lue par le service `printr-hotspot` de l'image.
 const HOSTAPD_CONF: &str = "/run/printr/hostapd.conf";
 /// Le service de l'image qui fait tourner hostapd et dnsmasq (adresses, portail captif).
 const HOTSPOT_UNIT: &str = "printr-hotspot.service";
@@ -239,7 +239,7 @@ fn hostapd_conf(ifname: &str, ssid: &str, password: &str) -> String {
 /// Raspberry Pi (brcmfmac) calcule alors une clé que les téléphones refusent (« mot de passe
 /// incorrect »). NetworkManager lâche l'interface le temps du point d'accès.
 fn open_hotspot(ifname: &str, ssid: &str, password: &str) -> Result<()> {
-    // Nom et mot de passe viennent de Printr, mais une ligne de trop changerait la configuration.
+    // Nom et mot de passe viennent de Bonnetje, mais une ligne de trop changerait la configuration.
     if [ifname, ssid, password].iter().any(|v| v.chars().any(char::is_control)) {
         bail!("{}", t("nom ou mot de passe invalide", "invalid name or password", "ongeldige naam of wachtwoord"));
     }
@@ -287,7 +287,7 @@ fn systemctl(args: &[&str]) -> Result<()> {
 /// Le point d'accès n'a pas pu s'ouvrir : on le dit sur papier plutôt que de rester muet.
 fn hotspot_failed_ticket(error: &str) -> Doc {
     let mut doc = Doc::new();
-    doc.text("Printr", Style::default().bold().center().size(2));
+    doc.text("Bonnetje", Style::default().bold().center().size(2));
     doc.text(
         t(
             "Pas de réseau, et impossible d'ouvrir le Wi-Fi de configuration.",
@@ -300,8 +300,8 @@ fn hotspot_failed_ticket(error: &str) -> Doc {
     doc.feed(1);
     doc.text(
         t(
-            "Branche Printr en Ethernet pour continuer, puis ouvre http://printr.local",
-            "Plug Printr into Ethernet to carry on, then open http://printr.local", "Sluit Bonnetje aan op Ethernet om verder te gaan en open dan http://printr.local",
+            "Branche Bonnetje en Ethernet pour continuer, puis ouvre http://printr.local",
+            "Plug Bonnetje into Ethernet to carry on, then open http://printr.local", "Sluit Bonnetje aan op Ethernet om verder te gaan en open dan http://printr.local",
         ),
         Style::default(),
     );
@@ -342,7 +342,7 @@ fn wifi_qr(ssid: &str, password: &str) -> String {
 /// Ticket 1 : rejoindre le point d'accès, puis ouvrir la page de configuration.
 fn hotspot_ticket(ssid: &str, password: &str, port: u16, error: Option<&str>) -> Doc {
     let mut doc = Doc::new();
-    doc.text("Printr", Style::default().bold().center().size(2));
+    doc.text("Bonnetje", Style::default().bold().center().size(2));
     if let Some(error) = error {
         doc.text(error, Style::default().center().bold());
         doc.feed(1);
@@ -368,13 +368,13 @@ fn hotspot_ticket(ssid: &str, password: &str, port: u16, error: Option<&str>) ->
 /// Ticket 2 : connecté, voici l'adresse de l'appli.
 fn joined_ticket(ssid: &str, urls: &[String]) -> Doc {
     let mut doc = Doc::new();
-    doc.text("Printr", Style::default().bold().center().size(2));
+    doc.text("Bonnetje", Style::default().bold().center().size(2));
     doc.text(&tr!("Connecté à « {ssid} » !", "Connected to “{ssid}”!", "Verbonden met “{ssid}”!"), Style::default().center());
     doc.feed(1);
     doc.text(
         t(
-            "Reconnecte ton téléphone au Wi-Fi de la maison, puis ouvre Printr :",
-            "Put your phone back on the home Wi-Fi, then open Printr:", "Zet je telefoon terug op de wifi thuis en open dan Bonnetje:",
+            "Reconnecte ton téléphone au Wi-Fi de la maison, puis ouvre Bonnetje :",
+            "Put your phone back on the home Wi-Fi, then open Bonnetje:", "Zet je telefoon terug op de wifi thuis en open dan Bonnetje:",
         ),
         Style::default(),
     );
@@ -509,8 +509,8 @@ pub fn spawn(app: Arc<App>, port: u16) {
         // Un Wi-Fi connu mais introuvable : on le dit, et on le retente en arrière-plan.
         let error = known.first().map(|name| {
             tr!(
-                "Printr ne trouve pas le Wi-Fi « {name} ». Il réessaie toutes les 5 minutes ; pour en choisir un autre :",
-                "Printr can't find the “{name}” Wi-Fi. It tries again every 5 minutes; to pick another one:", "Bonnetje vindt de wifi “{name}” niet. Het probeert elke 5 minuten opnieuw; om een andere te kiezen:"
+                "Bonnetje ne trouve pas le Wi-Fi « {name} ». Il réessaie toutes les 5 minutes ; pour en choisir un autre :",
+                "Bonnetje can't find the “{name}” Wi-Fi. It tries again every 5 minutes; to pick another one:", "Bonnetje vindt de wifi “{name}” niet. Het probeert elke 5 minuten opnieuw; om een andere te kiezen:"
             )
         });
         *state() = State::Hotspot { ssid: ssid.clone(), password: password.clone(), networks, error: error.clone() };
@@ -605,15 +605,15 @@ mod tests {
 
     #[test]
     fn hostapd_uses_plain_wpa2() {
-        let conf = hostapd_conf("wlan0", "Printr-AB12", "abcdefghjk");
+        let conf = hostapd_conf("wlan0", "Bonnetje-AB12", "abcdefghjk");
         assert!(conf.contains("\nwpa_key_mgmt=WPA-PSK\n"), "sans WPA-PSK-SHA256");
         assert!(conf.contains("\nrsn_pairwise=CCMP\n") && conf.contains("\nchannel=6\n"));
-        assert!(conf.contains("\nssid=Printr-AB12\n") && conf.ends_with("wpa_passphrase=abcdefghjk\n"));
+        assert!(conf.contains("\nssid=Bonnetje-AB12\n") && conf.ends_with("wpa_passphrase=abcdefghjk\n"));
     }
 
     #[test]
     fn qr_escapes_special_characters() {
-        assert_eq!(wifi_qr("Printr-AB12", "abc;def"), r"WIFI:T:WPA;S:Printr-AB12;P:abc\;def;;");
+        assert_eq!(wifi_qr("Bonnetje-AB12", "abc;def"), r"WIFI:T:WPA;S:Bonnetje-AB12;P:abc\;def;;");
     }
 
     #[test]

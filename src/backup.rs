@@ -41,7 +41,7 @@ pub struct Restored {
     pub settings_changed: bool,
 }
 
-/// Un nom de photo tel que Printr les crée : des lettres et des chiffres, puis `.png`.
+/// Un nom de photo tel que Bonnetje les crée : des lettres et des chiffres, puis `.png`.
 fn image_name_ok(name: &str) -> bool {
     name.strip_suffix(".png")
         .is_some_and(|id| !id.is_empty() && id.len() <= 40 && id.chars().all(|c| c.is_ascii_alphanumeric()))
@@ -81,12 +81,12 @@ type Image = (String, Vec<u8>);
 /// Lit et vérifie un fichier de sauvegarde, sans rien toucher.
 fn parse(bytes: &[u8]) -> Result<(Data, Vec<Image>)> {
     let backup: Backup = serde_json::from_slice(bytes).map_err(|_| {
-        anyhow::anyhow!("{}", t("ce fichier n'est pas une sauvegarde de Printr", "this file is not a Printr backup", "dit bestand is geen Bonnetje-back-up"))
+        anyhow::anyhow!("{}", t("ce fichier n'est pas une sauvegarde de Bonnetje", "this file is not a Bonnetje backup", "dit bestand is geen Bonnetje-back-up"))
     })?;
     if backup.printr_backup != FORMAT {
         bail!(
             "{}",
-            t("sauvegarde d'un format inconnu (Printr plus récent ?)", "backup in an unknown format (newer Printr?)", "back-up in een onbekend formaat (nieuwere Bonnetje?)")
+            t("sauvegarde d'un format inconnu (Bonnetje plus récent ?)", "backup in an unknown format (newer Bonnetje?)", "back-up in een onbekend formaat (nieuwere Bonnetje?)")
         );
     }
     let data: Data = serde_json::from_value(backup.data)

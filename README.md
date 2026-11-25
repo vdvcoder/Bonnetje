@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.png">
-    <img src="docs/logo-light.png" alt="Printr" width="220">
+    <img src="docs/logo-light.png" alt="Bonnetje" width="220">
   </picture>
 </p>
 
@@ -21,7 +21,7 @@
   <a href="README.fr.md">🇫🇷 Français</a>
 </p>
 
-Printr turns an **Epson TM-T88V** receipt printer into a family gadget. You compose a ticket from
+Bonnetje turns an **Epson TM-T88V** receipt printer into a family gadget. You compose a ticket from
 **56 blocks** (weather, horoscope, sudoku, word search, riddles, news, photos…), print it from your
 phone, **schedule** it for 7:30 on weekdays, or send a **little note with a photo** to the people
 who stayed home. A single Rust binary, running on a Raspberry Pi, that speaks ESC/POS directly to
@@ -92,12 +92,12 @@ Everything else is in the **[guide](https://xninety9.github.io/Printr/guide.en.h
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=xninety9/printr&type=date&theme=dark&legend=top-left">
     <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=xninety9/printr&type=date&legend=top-left">
-    <img alt="Star history chart of Printr on GitHub" src="https://api.star-history.com/chart?repos=xninety9/printr&type=date&legend=top-left">
+    <img alt="Star history chart of Bonnetje on GitHub" src="https://api.star-history.com/chart?repos=xninety9/printr&type=date&legend=top-left">
   </picture>
 </a>
 
 ## License
 
-Printr is licensed under the [Apache License 2.0](LICENSE): you can reuse, modify and redistribute it,
+Bonnetje is licensed under the [Apache License 2.0](LICENSE): you can reuse, modify and redistribute it,
 as long as you keep the [NOTICE](NOTICE) file, which credits the original author and the bundled
 CrossWords library.

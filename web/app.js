@@ -1,4 +1,4 @@
-// Printr — interface web : composer, imprimer et planifier des tickets.
+// Bonnetje — interface web : composer, imprimer et planifier des tickets.
 // Preact + htm, sans étape de compilation.
 
 import { html, render, useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from '/vendor/preact-htm.mjs';
@@ -6,9 +6,8 @@ import { html, render, useState, useEffect, useLayoutEffect, useRef, useMemo, us
 // Langue de l'installation (PRINTR_LANG côté serveur), lue dans <html lang> : T('Bonjour', 'Hello', 'Hallo').
 const LANG = document.documentElement.lang;
 const EN = LANG === 'en';
-const NL = LANG === 'nl';
-const LOCALE = EN ? 'en-US' : NL ? 'nl-BE' : 'fr-FR';
-const T = (fr, en, nl) => (EN ? en : NL ? nl : fr);
+const LOCALE = EN ? 'en-US' : 'nl-BE';
+const T = (fr, en, nl) => (EN ? en : nl); // Frans wordt niet meer getoond
 
 // ============================================================================
 // Outils
@@ -33,7 +32,7 @@ async function api(method, path, body) {
   try {
     res = await fetch(path, opts);
   } catch {
-    throw new Error(T('Impossible de joindre Printr. Vérifie la connexion.', "Can't reach Printr. Check your connection.", "Kan Bonnetje niet bereiken. Controleer je verbinding."));
+    throw new Error(T('Impossible de joindre Bonnetje. Vérifie la connexion.', "Can't reach Bonnetje. Check your connection.", "Kan Bonnetje niet bereiken. Controleer je verbinding."));
   }
   let data = null;
   try { data = await res.json(); } catch { /* corps vide */ }
@@ -371,7 +370,7 @@ const BLOCKS = [
     defaults: { source: 'builtin', cow: true },
     fields: [
       { key: 'cow', label: T('Une vache le dit (cowsay)', 'A cow says it (cowsay)', 'Een koe zegt het (cowsay)'), kind: 'toggle' },
-      { key: 'source', label: T('Les phrases', 'Lines', 'Zinnen'), kind: 'segmented', options: [['builtin', T('Celles de Printr', 'Printr’s', 'Die van Bonnetje')], ['system', T('La commande fortune', 'The fortune command', 'Het commando fortune')]], help: T('La commande fortune doit être installée sur le serveur (paquet fortune-mod).', 'The fortune command must be installed on the server (fortune-mod package).', 'Het commando fortune moet op de server geïnstalleerd zijn (pakket fortune-mod).') },
+      { key: 'source', label: T('Les phrases', 'Lines', 'Zinnen'), kind: 'segmented', options: [['builtin', T('Celles de Bonnetje', 'Bonnetje’s', 'Die van Bonnetje')], ['system', T('La commande fortune', 'The fortune command', 'Het commando fortune')]], help: T('La commande fortune doit être installée sur le serveur (paquet fortune-mod).', 'The fortune command must be installed on the server (fortune-mod package).', 'Het commando fortune moet op de server geïnstalleerd zijn (pakket fortune-mod).') },
       { key: 'seed', label: T('Numéro', 'Number', 'Nummer'), kind: 'number', optional: true, help: T('Laisse vide pour une phrase au hasard.', 'Leave empty for a random line.', 'Laat leeg voor een willekeurige zin.') },
     ],
     summary: (b) => (b.cow ? T('Dit par une vache', 'Said by a cow', 'Uitgesproken door een koe') : T('Au hasard', 'Random', 'Willekeurig')),
@@ -846,7 +845,7 @@ const yamlMap = (obj, indent) =>
 // Élément de liste : un objet commence sur la ligne du tiret.
 const yamlItem = (v, indent) => (isMap(v) && Object.keys(v).length ? ` ${yamlMap(v, indent).slice(indent.length)}` : yamlNode(v, indent));
 
-// Action de l'intégration Printr pour Home Assistant, ou action MQTT standard qui publie le ticket
+// Action de l'intégration Bonnetje pour Home Assistant, ou action MQTT standard qui publie le ticket
 // sur le sujet d'impression (`prefix` : PRINTR_MQTT_PREFIX du serveur).
 const haYaml = (ticket, label) =>
   `${yamlMap({ action: 'printr.print_ticket', data: { ...(label ? { label } : {}), ticket } }, '')}\n`;
@@ -1338,11 +1337,11 @@ async function waitForRestart() {
     } catch { /* pas encore relancé */ }
     await new Promise((r) => setTimeout(r, 1000));
   }
-  toast(T('Printr met du temps à redémarrer. Recharge la page dans un instant.', 'Printr is taking a while to restart. Reload the page in a moment.', 'Bonnetje heeft tijd nodig om te herstarten. Laad de pagina zo opnieuw.'), 'warn');
+  toast(T('Bonnetje met du temps à redémarrer. Recharge la page dans un instant.', 'Bonnetje is taking a while to restart. Reload the page in a moment.', 'Bonnetje heeft tijd nodig om te herstarten. Laad de pagina zo opnieuw.'), 'warn');
 }
 
 const Restarting = () => html`<div class="restarting" role="status"><${Spinner} />
-  <p class="muted">${T('Printr redémarre pour appliquer les réglages…', 'Printr is restarting to apply the settings…', 'Bonnetje herstart om de instellingen toe te passen…')}</p></div>`;
+  <p class="muted">${T('Bonnetje redémarre pour appliquer les réglages…', 'Bonnetje is restarting to apply the settings…', 'Bonnetje herstart om de instellingen toe te passen…')}</p></div>`;
 
 // Restaurer une sauvegarde : tout est remplacé (l'état actuel reste gardé sur le Pi), puis chacun se
 // reconnecte. Depuis « Mon compte » (administrateur), ou sur une installation neuve.
@@ -1362,8 +1361,8 @@ function RestoreButton({ cls = 'btn secondary small', label }) {
       onChange=${(e) => { setFile(e.target.files[0] || null); e.target.value = ''; }} />
     ${file && html`<${Confirm} title=${T('Restaurer cette sauvegarde ?', 'Restore this backup?', 'Deze back-up herstellen?')} danger action=${T('Restaurer', 'Restore', 'Herstellen')}
       message=${T(
-        `« ${file.name} » remplace les comptes, les tickets, l’historique, les réglages et les photos de ce Printr. L’état actuel reste gardé sur le Pi, au cas où. Chacun devra se reconnecter.`,
-        `“${file.name}” replaces the accounts, tickets, history, settings and photos of this Printr. The current state is kept on the Pi, just in case. Everyone will have to sign in again.`, `“${file.name}” vervangt de accounts, bonnetjes, geschiedenis, instellingen en foto's van deze Bonnetje. De huidige staat blijft voor alle zekerheid bewaard op de Pi. Iedereen moet opnieuw inloggen.`,
+        `« ${file.name} » remplace les comptes, les tickets, l’historique, les réglages et les photos de ce Bonnetje. L’état actuel reste gardé sur le Pi, au cas où. Chacun devra se reconnecter.`,
+        `“${file.name}” replaces the accounts, tickets, history, settings and photos of this Bonnetje. The current state is kept on the Pi, just in case. Everyone will have to sign in again.`, `“${file.name}” vervangt de accounts, bonnetjes, geschiedenis, instellingen en foto's van deze Bonnetje. De huidige staat blijft voor alle zekerheid bewaard op de Pi. Iedereen moet opnieuw inloggen.`,
       )}
       onConfirm=${restore} onClose=${() => setFile(null)} />`}
     ${restarting && html`<div class="overlay"><div class="sheet"><${Restarting} /></div></div>`}`;
@@ -1373,7 +1372,7 @@ function RestoreButton({ cls = 'btn secondary small', label }) {
 function FirstAccount({ onLogin }) {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const [lang, setLang] = useState(LANG || 'fr');
+  const [lang, setLang] = useState(LANG || 'nl');
   const [busy, setBusy] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const submit = async (e) => {
@@ -1389,7 +1388,7 @@ function FirstAccount({ onLogin }) {
   };
   if (restarting) return html`<${Restarting} />`;
   return html`<form class="first-account" onSubmit=${submit}>
-    <div class="first-lang"><${Segmented} options=${[['nl', 'Nederlands'], ['fr', 'Français'], ['en', 'English']]} value=${lang} onChange=${setLang} /></div>
+    <div class="first-lang"><${Segmented} options=${[['nl', 'Nederlands'], ['en', 'English']]} value=${lang} onChange=${setLang} /></div>
     <p style="margin:24px 0 14px"><strong>${T('Bienvenue !', 'Welcome!', 'Welkom!')}</strong><br/><span class="muted">${T(
       'Crée ton compte pour commencer. Tu pourras ensuite ajouter le reste de la famille.',
       'Create your account to get started. You can add the rest of the family afterwards.', 'Maak je account aan om te beginnen. Daarna kun je de rest van het gezin toevoegen.',
@@ -1432,7 +1431,7 @@ function Login({ onLogin }) {
 
   return html`<div class="login"><div class="login-card">
     <img class="logo" src="/mark.png" alt="" />
-    <h1>Printr</h1>
+    <h1>Bonnetje</h1>
     <p class="muted" style="margin:0">${T("L'imprimante de la maison", 'The printer of the house', 'De printer van het huis')}</p>
     ${users === null ? html`<div style="margin:32px"><${Spinner} /></div>` : users.length === 0
       ? html`<${FirstAccount} onLogin=${onLogin} />`
@@ -1548,7 +1547,7 @@ const EXAMPLE = {
   coloring: 'coloriage', coupon: 'bon', news: 'actualites', on_this_day: 'ephemeride', crypto: 'crypto', todo: 'a_faire',
   chores: 'taches', shopping: 'courses', recipe: 'recette', recipe_claude: 'recette_claude', recipe_from_ingredients: 'recette_ingredients', agenda: 'agenda', bins: 'poubelles', wifi: 'wifi', monthly_report: 'bilan',
 };
-const exampleUrl = (type) => EXAMPLE[type] && `/exemples/${EN || NL ? 'en/' : ''}${EXAMPLE[type]}.png`;
+const exampleUrl = (type) => EXAMPLE[type] && `/exemples/en/${EXAMPLE[type]}.png`;
 
 // Mots-clés de recherche, dans les deux langues, en plus du nom et de la description.
 const KEYWORDS = {
@@ -1947,7 +1946,7 @@ async function copyText(text, area) {
   return document.execCommand('copy');
 }
 
-// Configuration du ticket composé, à copier : en YAML, l'action Home Assistant (intégration Printr,
+// Configuration du ticket composé, à copier : en YAML, l'action Home Assistant (intégration Bonnetje,
 // ou MQTT quand le serveur y est relié) ; en JSON, le ticket tel que le prennent l'API, MQTT et
 // `printr print`. Le dernier format choisi est gardé.
 function TicketConfigSheet({ ticket, label, onClose }) {
@@ -1971,14 +1970,14 @@ function TicketConfigSheet({ ticket, label, onClose }) {
     : `${mqtt
       ? T(`L’action mqtt.publish de Home Assistant, qui publie le ticket sur ${mqtt}/print : rien d’autre à installer que l’intégration MQTT.`,
         `Home Assistant’s mqtt.publish action, publishing the ticket on ${mqtt}/print: nothing to install but the MQTT integration.`, `De mqtt.publish-actie van Home Assistant, die het bonnetje publiceert op ${mqtt}/print: je hoeft enkel de MQTT-integratie te installeren.`)
-      : T('L’action printr.print_ticket de l’intégration Printr pour Home Assistant.', 'The printr.print_ticket action of the Printr integration for Home Assistant.', 'De printr.print_ticket-actie van de Bonnetje-integratie voor Home Assistant.')
+      : T('L’action printr.print_ticket de l’intégration Bonnetje pour Home Assistant.', 'The printr.print_ticket action of the Bonnetje integration for Home Assistant.', 'De printr.print_ticket-actie van de Bonnetje-integratie voor Home Assistant.')
     } ${T('À coller dans une automatisation ou un script, en édition YAML.', 'Paste it into an automation or a script, in YAML mode.', 'Plak het in een automatisering of script, in YAML-modus.')}`;
   return html`<${Sheet} title=${T('Configuration du ticket', 'Ticket configuration', 'Bonnetjesconfiguratie')} wide onClose=${onClose} footer=${html`
     <button class="btn secondary" onClick=${onClose}>${T('Fermer', 'Close', 'Sluiten')}</button>
     <button class="btn primary grow" onClick=${copy}><${Icon} name="copy" /> ${T('Copier', 'Copy', 'Kopiëren')}</button>`}>
     <div class="config-switches">
       <${Segmented} options=${[['yaml', 'YAML'], ['json', 'JSON']]} value=${format} onChange=${setFormat} />
-      ${format === 'yaml' && SERVER.mqtt && html`<${Segmented} options=${[['integration', T('Intégration Printr', 'Printr integration', 'Bonnetje-integratie')], ['mqtt', 'MQTT']]}
+      ${format === 'yaml' && SERVER.mqtt && html`<${Segmented} options=${[['integration', T('Intégration Bonnetje', 'Bonnetje integration', 'Bonnetje-integratie')], ['mqtt', 'MQTT']]}
         value=${via} onChange=${setVia} />`}
     </div>
     <p class="muted">${help}</p>
@@ -2440,7 +2439,7 @@ function SettingSecret({ s, label, help, value, onChange, generate }) {
   else if (value === '' && s.set) body = html`<div class="setting-state"><span class="muted">${T('Sera effacé', 'Will be cleared', 'Wordt gewist')}</span>
     <button type="button" class="btn ghost small" onClick=${() => onChange(undefined)}>${T('Annuler', 'Undo', 'Ongedaan maken')}</button></div>`;
   else if (generate && value) body = html`<div class="setting-new-token"><code>${value}</code><span class="muted">${T(
-    'Copie-le maintenant : Printr ne le montrera plus.', 'Copy it now: Printr won’t show it again.', 'Kopieer het nu: Bonnetje toont het niet opnieuw.')}</span>
+    'Copie-le maintenant : Bonnetje ne le montrera plus.', 'Copy it now: Bonnetje won’t show it again.', 'Kopieer het nu: Bonnetje toont het niet opnieuw.')}</span>
     <button type="button" class="btn ghost small" onClick=${() => onChange(undefined)}>${T('Annuler', 'Undo', 'Ongedaan maken')}</button></div>`;
   else if (editing || !s.set) body = html`<div class="setting-state">
     <input class="input" type="password" autocomplete="off" value=${value || ''} onInput=${(e) => onChange(e.target.value.trim() || undefined)} />
@@ -2472,7 +2471,7 @@ function SettingsSheet({ onClose }) {
     return next;
   });
   const cur = (key) => draft[key] ?? settings[key]?.value ?? '';
-  const lang = cur('PRINTR_LANG') || LANG || 'fr';
+  const lang = cur('PRINTR_LANG') || LANG || 'nl';
   // Ce qui change vraiment : un secret touché, ou une valeur différente de celle en vigueur.
   const changes = Object.fromEntries(Object.entries(draft).filter(([k, v]) =>
     !settings[k]?.locked && (settings[k]?.value === null && settings[k]?.set ? true : (settings[k]?.value ?? '') !== v)));
@@ -2498,7 +2497,7 @@ function SettingsSheet({ onClose }) {
     try {
       const r = await api('PUT', '/api/settings', { values: changes });
       if (r.restarting) { setRestarting(true); waitForRestart(); return; }
-      toast(T('Réglages enregistrés : redémarre Printr pour les appliquer.', 'Settings saved: restart Printr to apply them.', 'Instellingen opgeslagen: herstart Bonnetje om ze toe te passen.'), 'warn', '🔁');
+      toast(T('Réglages enregistrés : redémarre Bonnetje pour les appliquer.', 'Settings saved: restart Bonnetje to apply them.', 'Instellingen opgeslagen: herstart Bonnetje om ze toe te passen.'), 'warn', '🔁');
       onClose();
     } catch (e) { toast(e.message, 'error'); } finally { setBusy(false); }
   };
@@ -2510,11 +2509,11 @@ function SettingsSheet({ onClose }) {
     <button class="btn primary grow" disabled=${busy || !count} onClick=${save}><${Icon} name="check" /> ${count
       ? T(`Enregistrer (${count})`, `Save (${count})`, `Opslaan (${count})`) : T('Enregistrer', 'Save', 'Opslaan')}</button>`}>
     <p class="muted" style="margin:0">${restart
-      ? T('Printr redémarre quelques secondes pour appliquer les changements.', 'Printr restarts for a few seconds to apply changes.', 'Bonnetje herstart even om de wijzigingen toe te passen.')
-      : T('Les changements s’appliquent au prochain redémarrage de Printr.', 'Changes apply the next time Printr restarts.', 'Wijzigingen worden toegepast bij de volgende herstart van Bonnetje.')}</p>
+      ? T('Bonnetje redémarre quelques secondes pour appliquer les changements.', 'Bonnetje restarts for a few seconds to apply changes.', 'Bonnetje herstart even om de wijzigingen toe te passen.')
+      : T('Les changements s’appliquent au prochain redémarrage de Bonnetje.', 'Changes apply the next time Bonnetje restarts.', 'Wijzigingen worden toegepast bij de volgende herstart van Bonnetje.')}</p>
 
     <div class="section-title">${T('Général', 'General', 'Algemeen')}</div>
-    ${choice('PRINTR_LANG', T('Langue', 'Language', 'Taal'), [['nl', 'Nederlands'], ['fr', 'Français'], ['en', 'English']])}
+    ${choice('PRINTR_LANG', T('Langue', 'Language', 'Taal'), [['nl', 'Nederlands'], ['en', 'English']])}
     ${text('PRINTR_CITY', T('Ville', 'City', 'Stad'), T('Météo, qualité de l’air et horaires du soleil, sauf si le bloc en précise une.', 'Weather, air quality and sun times, unless the block sets one.', 'Weer, luchtkwaliteit en zonnetijden, tenzij het blok er een instelt.'), T('Ex. Bordeaux', 'E.g. Boston', 'Bv. Kortemark'))}
     ${choice('PRINTR_UNITS', T('Unités de la météo', 'Weather units', 'Eenheden weer'), [['', T('°C et km/h', '°C and km/h', '°C en km/u')], ['imperial', T('°F et mph', '°F and mph', '°F en mph')]])}
 
@@ -2535,17 +2534,17 @@ function SettingsSheet({ onClose }) {
     <div class="section-title">Home Assistant · MQTT</div>
     ${secret('PRINTR_MQTT_URL', T('Adresse du broker', 'Broker address', 'Brokeradres'), T('Ex. mqtt://utilisateur:motdepasse@192.168.1.10:1883', 'E.g. mqtt://user:password@192.168.1.10:1883', 'Bv. mqtt://gebruiker:wachtwoord@192.168.1.10:1883'))}
     ${text('PRINTR_MQTT_PREFIX', T('Préfixe des sujets', 'Topic prefix', 'Topicvoorvoegsel'), null, 'printr')}
-    ${toggle('PRINTR_MQTT_DISCOVERY', T('Découverte automatique', 'Automatic discovery', 'Automatische detectie'), T('Printr apparaît tout seul dans Home Assistant.', 'Printr shows up in Home Assistant by itself.', 'Bonnetje verschijnt vanzelf in Home Assistant.'))}
+    ${toggle('PRINTR_MQTT_DISCOVERY', T('Découverte automatique', 'Automatic discovery', 'Automatische detectie'), T('Bonnetje apparaît tout seul dans Home Assistant.', 'Bonnetje shows up in Home Assistant by itself.', 'Bonnetje verschijnt vanzelf in Home Assistant.'))}
 
     <div class="section-title">${T('Scripts et limites', 'Scripts and limits', 'Scripts en limieten')}</div>
     ${secret('PRINTR_TOKEN', T('Jeton d’API', 'API token', 'API-token'), T('Pour les scripts : « Authorization: Bearer <jeton> ».', 'For scripts: “Authorization: Bearer <token>”.', 'Voor scripts: “Authorization: Bearer <token>”.'), true)}
     ${text('PRINTR_MAX_TICKETS_PER_HOUR', T('Tickets par heure et par compte', 'Tickets per hour and account', 'Bonnetjes per uur en per account'), T('0 : sans limite.', '0: no limit.', '0: geen limiet.'), '20', 'number')}
     ${text('PRINTR_QUEUE_HOURS', T('Attente si l’imprimante est absente (heures)', 'Wait when the printer is away (hours)', 'Wachttijd als de printer weg is (uren)'), null, '12', 'number')}
-    ${toggle('PRINTR_UPDATE_CHECK', T('Signaler les nouvelles versions', 'Report new versions', 'Nieuwe versies melden'), T('Une fois par jour, Printr regarde sur GitHub.', 'Once a day, Printr checks GitHub.', 'Eén keer per dag kijkt Bonnetje op GitHub.'))}
+    ${toggle('PRINTR_UPDATE_CHECK', T('Signaler les nouvelles versions', 'Report new versions', 'Nieuwe versies melden'), T('Une fois par jour, Bonnetje regarde sur GitHub.', 'Once a day, Bonnetje checks GitHub.', 'Eén keer per dag kijkt Bonnetje op GitHub.'))}
     ${settings.PRINTR_AUTO_UPDATE.locked
       ? html`<${Field} label=${T('Installer automatiquement', 'Install automatically', 'Automatisch installeren')}><span class="chip setting-lock">${LOCKED_HINT}</span></${Field}>`
       : html`<${Switch} label=${T('Installer automatiquement, la nuit', 'Install automatically, at night', 'Automatisch installeren, \'s nachts')}
-        help=${T('Seulement les versions signées par l’auteur de Printr, entre 3 h et 5 h ; retour à l’ancienne si la nouvelle ne démarre pas.', 'Only versions signed by Printr’s author, between 3 and 5 am; back to the previous one if the new one does not start.', 'Alleen versies die door de auteur van Bonnetje zijn ondertekend, tussen 3 en 5 uur; terug naar de vorige als de nieuwe niet start.')}
+        help=${T('Seulement les versions signées par l’auteur de Bonnetje, entre 3 h et 5 h ; retour à l’ancienne si la nouvelle ne démarre pas.', 'Only versions signed by Bonnetje’s author, between 3 and 5 am; back to the previous one if the new one does not start.', 'Alleen versies die door de auteur van Bonnetje zijn ondertekend, tussen 3 en 5 uur; terug naar de vorige als de nieuwe niet start.')}
         checked=${cur('PRINTR_AUTO_UPDATE') === 'auto'} onChange=${(on) => set('PRINTR_AUTO_UPDATE', on ? 'auto' : '')} />`}
   </${Sheet}>`;
 }
@@ -2554,7 +2553,7 @@ function SettingsSheet({ onClose }) {
 // Longueur de papier lisible : « 52 m », « 80 cm ».
 const metres = (mm) => (mm >= 1000 ? `${Math.round(mm / 1000)}\u00a0m` : `${Math.round(mm / 10)}\u00a0cm`);
 
-// La jauge de papier, estimée par Printr depuis la pose du rouleau, et le bouton pour en poser un neuf.
+// La jauge de papier, estimée par Bonnetje depuis la pose du rouleau, et le bouton pour en poser un neuf.
 function PaperCard({ paper }) {
   const [open, setOpen] = useState(false);
   const [length, setLength] = useState(String(Math.round(paper.roll_mm / 1000)));
@@ -2581,8 +2580,8 @@ function PaperCard({ paper }) {
     <button class="btn secondary" disabled=${busy || !(Number(length) >= 5 && Number(length) <= 500)}>${T('C’est posé', 'Done', 'Klaar')}</button>
   </form>
   <p class="muted paper-hint">${T(
-    'Printr remet aussi la jauge à zéro tout seul quand l’imprimante passe de « plus de papier » à « prête », et cale la longueur sur ce qu’un rouleau entier a vraiment donné.',
-    'Printr also resets the gauge by itself when the printer goes from “out of paper” to “ready”, and adjusts the length to what a whole roll really gave.', 'Bonnetje zet de meter ook zelf terug wanneer de printer van “papier op” naar “klaar” gaat, en past de lengte aan op wat een hele rol echt opleverde.',
+    'Bonnetje remet aussi la jauge à zéro tout seul quand l’imprimante passe de « plus de papier » à « prête », et cale la longueur sur ce qu’un rouleau entier a vraiment donné.',
+    'Bonnetje also resets the gauge by itself when the printer goes from “out of paper” to “ready”, and adjusts the length to what a whole roll really gave.', 'Bonnetje zet de meter ook zelf terug wanneer de printer van “papier op” naar “klaar” gaat, en past de lengte aan op wat een hele rol echt opleverde.',
   )}</p>`}`;
 }
 
@@ -2620,7 +2619,7 @@ function AccountSheet({ me, users, version, update, paper, reloadUsers, onLogout
 
     ${me.admin && update && html`<a class="update-card" href=${update.url} target="_blank" rel="noopener">
       <span class="big-emoji">✨</span>
-      <span class="grow"><strong>${T(`Printr ${update.version} est disponible`, `Printr ${update.version} is available`, `Bonnetje ${update.version} is beschikbaar`)}</strong>
+      <span class="grow"><strong>${T(`Bonnetje ${update.version} est disponible`, `Bonnetje ${update.version} is available`, `Bonnetje ${update.version} is beschikbaar`)}</strong>
         <span class="muted">${SERVER.autoUpdate ? T(
           `Tu as la ${version}. Elle s’installera toute seule cette nuit ; les nouveautés sont par ici.`,
           `You're on ${version}. It will install itself tonight; here's what's new.`, `Je hebt ${version}. Die installeert zich vanavond vanzelf; dit is er nieuw.`,
@@ -2648,7 +2647,7 @@ function AccountSheet({ me, users, version, update, paper, reloadUsers, onLogout
       <button class="btn secondary" disabled=${busy || !name.trim() || password.length < 8}><${Icon} name="plus" size=${16} /> ${T('Ajouter', 'Add', 'Toevoegen')}</button>
     </form>
 
-    ${me.admin && html`<div class="section-title">${T('Printr', 'Printr', 'Bonnetje')}</div>
+    ${me.admin && html`<div class="section-title">${T('Bonnetje', 'Bonnetje', 'Bonnetje')}</div>
       <button type="button" class="setting-card" onClick=${() => setSettingsOpen(true)}>
         <span class="big-emoji" aria-hidden="true">⚙️</span>
         <span class="grow"><strong>${T('Réglages', 'Settings', 'Instellingen')}</strong>
@@ -2695,7 +2694,7 @@ function AccountSheet({ me, users, version, update, paper, reloadUsers, onLogout
 }
 
 // ============================================================================
-// Première connexion au réseau (image Raspberry Pi) : depuis le point d'accès de Printr
+// Première connexion au réseau (image Raspberry Pi) : depuis le point d'accès de Bonnetje
 // ============================================================================
 
 const signalBars = (signal) => (signal >= 70 ? '▂▄▆█' : signal >= 45 ? '▂▄▆' : signal >= 20 ? '▂▄' : '▂');
@@ -2720,11 +2719,11 @@ function WifiSetup({ state }) {
       <div class="wifi-joining" aria-hidden="true">📶</div>
       <h1>${T(`Connexion à « ${joining} »…`, `Joining “${joining}”…`, `Verbinden met “${joining}”…`)}</h1>
       <div class="wizard-body"><p class="muted">${T(
-        'Ton téléphone va perdre le Wi-Fi de Printr : c’est normal. Dans un instant, Printr imprime un ticket avec l’adresse de l’appli.',
-        'Your phone is about to lose Printr’s Wi-Fi: that’s expected. In a moment, Printr prints a ticket with the app’s address.', 'Je telefoon verliest zo meteen de wifi van Bonnetje: dat is normaal. Zo meteen drukt Bonnetje een bonnetje af met het adres van de app.',
+        'Ton téléphone va perdre le Wi-Fi de Bonnetje : c’est normal. Dans un instant, Bonnetje imprime un ticket avec l’adresse de l’appli.',
+        'Your phone is about to lose Bonnetje’s Wi-Fi: that’s expected. In a moment, Bonnetje prints a ticket with the app’s address.', 'Je telefoon verliest zo meteen de wifi van Bonnetje: dat is normaal. Zo meteen drukt Bonnetje een bonnetje af met het adres van de app.',
       )}</p><p class="muted">${T(
-        `Si le ticket annonce un échec, reconnecte-toi à « ${state.hotspot || 'Printr'} » et réessaie.`,
-        `If the ticket reports a failure, reconnect to “${state.hotspot || 'Printr'}” and try again.`, `Meldt het bonnetje een mislukking, verbind dan opnieuw met “${state.hotspot || 'Printr'}” en probeer opnieuw.`,
+        `Si le ticket annonce un échec, reconnecte-toi à « ${state.hotspot || 'Bonnetje'} » et réessaie.`,
+        `If the ticket reports a failure, reconnect to “${state.hotspot || 'Bonnetje'}” and try again.`, `Meldt het bonnetje een mislukking, verbind dan opnieuw met “${state.hotspot || 'Bonnetje'}” en probeer opnieuw.`,
       )}</p></div></div></div>`;
   }
   return html`<div class="login"><form class="login-card wizard" onSubmit=${submit}>
@@ -2732,7 +2731,7 @@ function WifiSetup({ state }) {
     <h1>${T('Le Wi-Fi de la maison', 'Your home Wi-Fi', 'Je wifi thuis')}</h1>
     ${state.error && html`<p class="wifi-error" role="alert">${state.error}</p>`}
     <div class="wizard-body">
-      <p class="muted">${T('Choisis le réseau que Printr doit rejoindre.', 'Pick the network Printr should join.', 'Kies het netwerk waarmee Bonnetje verbinding moet maken.')}</p>
+      <p class="muted">${T('Choisis le réseau que Bonnetje doit rejoindre.', 'Pick the network Bonnetje should join.', 'Kies het netwerk waarmee Bonnetje verbinding moet maken.')}</p>
       <div class="wizard-printers">
         ${state.networks.map((n) => html`<button type="button" key=${n.ssid} class="setting-card ${picked?.ssid === n.ssid ? 'on' : ''}"
           onClick=${() => { setPicked(n); setPassword(''); }}>
@@ -2748,7 +2747,7 @@ function WifiSetup({ state }) {
         value=${password} onInput=${(e) => setPassword(e.target.value)} />`}
     </div>
     <div class="wizard-actions"><button class="btn primary big block" disabled=${busy || !name || (needsPassword && password.length < 8)}>
-      ${busy ? html`<${Spinner} />` : T('Connecter Printr', 'Connect Printr', 'Bonnetje verbinden')}</button></div>
+      ${busy ? html`<${Spinner} />` : T('Connecter Bonnetje', 'Connect Bonnetje', 'Bonnetje verbinden')}</button></div>
   </form></div>`;
 }
 
@@ -2857,7 +2856,7 @@ function Wizard({ me, onDone }) {
     setBusy(true);
     try {
       await api('POST', '/api/wizard/done');
-      // Mises à jour automatiques proposées par défaut : Printr se débrouille seul.
+      // Mises à jour automatiques proposées par défaut : Bonnetje se débrouille seul.
       const all = settings.PRINTR_AUTO_UPDATE && !settings.PRINTR_AUTO_UPDATE.set ? { PRINTR_AUTO_UPDATE: 'auto', ...values } : values;
       // Seulement ce qui change, et pas ce que le système fixe.
       const changes = Object.fromEntries(Object.entries(all)
@@ -2865,7 +2864,7 @@ function Wizard({ me, onDone }) {
       if (!Object.keys(changes).length) { onDone(); return; }
       const r = await api('PUT', '/api/settings', { values: changes });
       if (r.restarting) { setRestarting(true); waitForRestart(); return; }
-      toast(T('Réglages enregistrés : redémarre Printr pour les appliquer.', 'Settings saved: restart Printr to apply them.', 'Instellingen opgeslagen: herstart Bonnetje om ze toe te passen.'), 'warn', '🔁');
+      toast(T('Réglages enregistrés : redémarre Bonnetje pour les appliquer.', 'Settings saved: restart Bonnetje to apply them.', 'Instellingen opgeslagen: herstart Bonnetje om ze toe te passen.'), 'warn', '🔁');
       onDone();
     } catch (e) { toast(e.message, 'error'); } finally { setBusy(false); }
   };
@@ -2889,17 +2888,17 @@ function Wizard({ me, onDone }) {
       ? html`<p class="muted">✅ ${T('Claude est déjà configuré : histoires, horoscope, recettes et mot du jour sont disponibles.',
           'Claude is already set up: stories, horoscope, recipes and word of the day are available.', 'Claude is al ingesteld: verhalen, horoscoop, recepten en woord van de dag zijn beschikbaar.')}</p>`
       : html`<p class="muted">${T(
-          'Facultatif : avec une clé d’API Anthropic, Printr écrit des histoires, l’horoscope, des recettes et le mot du jour. Sans clé, tous les autres blocs marchent.',
-          'Optional: with an Anthropic API key, Printr writes stories, the horoscope, recipes and the word of the day. Without one, every other block works.', 'Optioneel: met een Anthropic API-sleutel schrijft Bonnetje verhalen, de horoscoop, recepten en het woord van de dag. Zonder sleutel werken alle andere blokken gewoon.',
+          'Facultatif : avec une clé d’API Anthropic, Bonnetje écrit des histoires, l’horoscope, des recettes et le mot du jour. Sans clé, tous les autres blocs marchent.',
+          'Optional: with an Anthropic API key, Bonnetje writes stories, the horoscope, recipes and the word of the day. Without one, every other block works.', 'Optioneel: met een Anthropic API-sleutel schrijft Bonnetje verhalen, de horoscoop, recepten en het woord van de dag. Zonder sleutel werken alle andere blokken gewoon.',
         )}</p>
         <${Field} help=${html`<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">${T('Créer une clé sur console.anthropic.com', 'Create a key on console.anthropic.com', 'Maak een sleutel aan op console.anthropic.com')}</a>`}>
           <input class="input" type="password" autocomplete="off" placeholder="sk-ant-…" value=${key} onInput=${(e) => set('ANTHROPIC_API_KEY', e.target.value.trim())} /></${Field}>`;
   } else {
     body = html`<p class="muted">${T(
-      'Ouvre Printr sur le téléphone de chacun à cette adresse, et ajoute-les depuis « Mon compte ».',
-      'Open Printr on everyone’s phone at this address, and add them from “My account”.', 'Open Bonnetje op ieders telefoon via dit adres en voeg ze toe via “Mijn account”.',
+      'Ouvre Bonnetje sur le téléphone de chacun à cette adresse, et ajoute-les depuis « Mon compte ».',
+      'Open Bonnetje on everyone’s phone at this address, and add them from “My account”.', 'Open Bonnetje op ieders telefoon via dit adres en voeg ze toe via “Mijn account”.',
     )}</p><p class="wizard-address">${location.origin}</p>
-    ${settings.PRINTR_AUTO_UPDATE && !settings.PRINTR_AUTO_UPDATE.locked && html`<${Switch} label=${T('Mettre Printr à jour tout seul, la nuit', 'Keep Printr up to date by itself, at night', 'Bonnetje \'s nachts zelf up-to-date houden')}
+    ${settings.PRINTR_AUTO_UPDATE && !settings.PRINTR_AUTO_UPDATE.locked && html`<${Switch} label=${T('Mettre Bonnetje à jour tout seul, la nuit', 'Keep Bonnetje up to date by itself, at night', 'Bonnetje \'s nachts zelf up-to-date houden')}
       help=${T('Les nouvelles versions signées s’installent entre 3 h et 5 h.', 'New signed versions install between 3 and 5 am.', 'Nieuwe ondertekende versies worden tussen 3 en 5 uur geïnstalleerd.')}
       checked=${(values.PRINTR_AUTO_UPDATE ?? (settings.PRINTR_AUTO_UPDATE.set ? settings.PRINTR_AUTO_UPDATE.value : 'auto')) === 'auto'}
       onChange=${(on) => set('PRINTR_AUTO_UPDATE', on ? 'auto' : '')} />`}`;
@@ -2923,7 +2922,7 @@ function Wizard({ me, onDone }) {
 }
 
 const NAV = [
-  { hash: '#/', label: T('Accueil', 'Home', 'Thuis'), icon: 'home', title: 'Printr' },
+  { hash: '#/', label: T('Accueil', 'Home', 'Thuis'), icon: 'home', title: 'Bonnetje' },
   { hash: '#/compose', label: T('Composer', 'Compose', 'Opstellen'), icon: 'ticket', title: T('Composer', 'Compose', 'Opstellen') },
   { hash: '#/message', label: T('Petit mot', 'Little note', 'Briefje'), icon: 'heart', title: T('Un petit mot', 'A little note', 'Een berichtje') },
   { hash: '#/history', label: T('Historique', 'History', 'Geschiedenis'), icon: 'history', title: T('Historique', 'History', 'Geschiedenis') },
@@ -3010,7 +3009,7 @@ function App() {
 
   return html`<div class="shell">
     <nav class="sidebar" aria-label=${T('Navigation', 'Navigation', 'Navigatie')}>
-      <div class="brand"><img src="/mark.png" alt="" />Printr</div>
+      <div class="brand"><img src="/mark.png" alt="" />Bonnetje</div>
       ${NAV.map((n) => html`<a class="navlink ${n.hash === route.hash ? 'active' : ''}" href=${n.hash}
         onClick=${n.hash === '#/compose' ? (e) => { if (route.hash !== '#/compose') { e.preventDefault(); openComposer(store.get('printr.draft', null) || emptyComposer()); } } : undefined}>
         <${Icon} name=${n.icon} />${n.label}</a>`)}
